@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #root {
+    width: 100%;
+    height: 100%;
+}
+
+@font-face {
+    font-family: "CrossedOut";
+    src: url("./src/assets/fonts/CrossedOut.ttf") format("truetype");
+}
+
+@font-face {
+    font-family: "HeyComic";
+    src: url("./src/assets/fonts/Hey\ Comic.ttf") format("truetype");
+}
+
+@font-face {
+    font-family: "StrokeDimension";
+    src: url("./src/assets/fonts/StrokeDimension.ttf") format("truetype");
+}
