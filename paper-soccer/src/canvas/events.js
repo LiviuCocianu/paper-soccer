@@ -28,23 +28,31 @@ const HOVER_EVENT = (canvas, nodeLocations, nodeRadius) => e => {
     if (!found) canvas.classList.remove("cursor-pointer")
 }
 
-let EVENTS = []
+var registeredEvents = false
+var EVENTS = []
 
 export function registerNodeEvents(canvas, nodeLocations, nodeRadius) {
-    const clickEvent = CLICK_EVENT(nodeLocations, nodeRadius)
-    const hoverEvent = HOVER_EVENT(canvas, nodeLocations, nodeRadius)
-
-    canvas.addEventListener("click", clickEvent)
-    canvas.addEventListener("mousemove", hoverEvent)
-
-    EVENTS.push({ type: "click", value: clickEvent })
-    EVENTS.push({ type: "mousemove", value: hoverEvent })
+    if(!registeredEvents) {
+        const clickEvent = CLICK_EVENT(nodeLocations, nodeRadius)
+        const hoverEvent = HOVER_EVENT(canvas, nodeLocations, nodeRadius)
+    
+        canvas.addEventListener("click", clickEvent)
+        canvas.addEventListener("mousemove", hoverEvent)
+    
+        EVENTS.push({ type: "click", value: clickEvent })
+        EVENTS.push({ type: "mousemove", value: hoverEvent })
+    
+        registeredEvents = true
+    }
 }
 
 export function clearNodeEvents(canvas) {
-    for(const event of EVENTS) {
-        canvas.removeEventListener(event.type, event.value)
-    }
+    if(registeredEvents) {
+        for (const event of EVENTS) {
+            canvas.removeEventListener(event.type, event.value)
+        }
 
-    EVENTS = []
+        EVENTS = []
+        registeredEvents = false
+    }
 }

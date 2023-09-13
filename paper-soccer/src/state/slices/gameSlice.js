@@ -7,7 +7,8 @@ const initialState = {
     status: "WAITING",
     scores: [0, 0],
     ballPosition: 52,
-    history: {}
+    history: {},
+    countdown: 3
 }
 
 // Example of history object; TODO remove this on production release
@@ -33,7 +34,7 @@ export const gameSlice = createSlice({
             return state
         },
         setStatus: (state, action) => {
-            const val = !GAME_STATUS.includes(action.payload) ? initialState.status : action.payload
+            const val = !Object.keys(GAME_STATUS).includes(action.payload) ? initialState.status : action.payload
             state.status = val
             return state
         },
@@ -52,9 +53,14 @@ export const gameSlice = createSlice({
         setHistory: (state, action) => {
             state.history = action.payload
             return state
+        },
+        setCountdown: (state, action) => {
+            const val = Math.max(0, action.payload)
+            state.countdown = val
+            return state
         }
     }
 })
 
-export const { setNodes, setActivePlayer, setStatus, setScoreFor, setBallPosition, setHistory } = gameSlice.actions
+export const { setNodes, setActivePlayer, setStatus, setScoreFor, setBallPosition, setHistory, setCountdown } = gameSlice.actions
 export default gameSlice.reducer
