@@ -2,6 +2,7 @@
   "name": "paper-soccer",
   "private": true,
   "version": "0.0.0",
+  "description": "MIT",
   "type": "module",
   "scripts": {
     "dev": "vite",

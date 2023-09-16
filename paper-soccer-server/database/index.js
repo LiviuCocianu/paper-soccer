@@ -19,7 +19,7 @@ export function setupMySQL() {
         }
 
         conn.query(`CREATE TABLE IF NOT EXISTS Player(
-            id INTEGER AUTO_INCREMENT PRIMARY KEY,
+            id VARCHAR(20) PRIMARY KEY,
             roomOrder TINYINT UNSIGNED DEFAULT 1 NOT NULL,
             username VARCHAR(16) NOT NULL DEFAULT 'Player',
             score SMALLINT UNSIGNED NOT NULL,

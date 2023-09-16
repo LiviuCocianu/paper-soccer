@@ -26,10 +26,11 @@ router.get("/:id", (req, res) => {
 })
 
 // Create
-router.post("/", async (req, res) => {
+router.post("/:id", async (req, res) => {
     const conn = await pool.promise().getConnection()
 
-    const { point, stateId } = req.body;
+    const stateId = req.params.id
+    const { point } = req.body;
 
     if(point == undefined) {
         res.status(500).json(CRUD.ERROR("No point specified in request body!"))
@@ -39,12 +40,14 @@ router.post("/", async (req, res) => {
         return
     }
 
-    if (!stateId) {
-        res.status(500).json(CRUD.ERROR("No stateId specified for this node! Node must be associated to a game state"))
-        return
-    }
-
     try {
+        const [stateRes] = await conn.query("SELECT * FROM GameState WHERE id=?", [stateId])
+
+        if(stateRes.length == 0) {
+            res.status(400).json(CRUD.ERROR("No game state corresponding to this state ID was found!"))
+            return
+        }
+
         const [nodeRes] = await conn.query("INSERT INTO PitchNode (point, stateId) VALUES (?, ?)", [point, stateId])
         const [node] = await conn.query("SELECT * FROM PitchNode WHERE id=?", [nodeRes.insertId])
 

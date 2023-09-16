@@ -20,7 +20,15 @@ router.get("/:id", (req, res) => {
 router.post("/", async (req, res) => {
     const conn = await pool.promise().getConnection()
 
-    const { username, invitedTo } = req.body;
+    const { id, username, invitedTo } = req.body;
+
+    if (!id) {
+        res.status(400).json(CRUD.ERROR("No ID specified in request body!"))
+        return
+    } else if (id.length != 20) {
+        res.status(400).json(CRUD.ERROR("ID must be 20 characters long!"))
+        return
+    }
 
     if (username && username.length > 16) {
         res.status(400).json(CRUD.ERROR("Username is longer than 16 characters!"))
@@ -53,12 +61,12 @@ router.post("/", async (req, res) => {
 
         const roomOrder = count + 1
 
-        const [playerRes] = await conn.query(`INSERT INTO Player 
-            (roomOrder, score, invitedTo${username ? ", username" : ""}) 
-            VALUES (?, ?, ?${username ? ", ?" : ""})
-        `, [roomOrder, 0, invitedTo, username])
+        await conn.query(`INSERT INTO Player 
+            (id, roomOrder, score, invitedTo${username ? ", username" : ""}) 
+            VALUES (?, ?, ?, ?${username ? ", ?" : ""})
+        `, [id, roomOrder, 0, invitedTo, username])
 
-        const [player] = await conn.query("SELECT * FROM Player WHERE id=?", [playerRes.insertId])
+        const [player] = await conn.query("SELECT * FROM Player WHERE id=?", [id])
 
         res.status(200).json(CRUD.CREATED("OK", player[0]))
     } catch (err) {
@@ -105,22 +113,18 @@ router.patch("/:id", async (req, res) => {
 
 // Delete one
 router.delete("/:id", async (req, res) => {
-    const inviteCode = req.params.id
+    const id = req.params.id
     const conn = await pool.promise().getConnection()
 
     try {
-        const [roomById] = await conn.query("SELECT id FROM Room WHERE inviteCode=?", [inviteCode])
+        const [playerById] = await conn.query("SELECT id FROM Player WHERE id=?", [id])
 
-        if (roomById.length == 0) {
+        if (playerById.length == 0) {
             res.status(204).json()
             return
         }
 
-        const roomId = roomById[0].id
-
-        await conn.query("UPDATE Room SET stateId=? WHERE id=?", [null, roomId])
-        await conn.query("DELETE FROM GameState WHERE roomId=?", [roomId])
-        await conn.query("DELETE FROM Room WHERE id=?", [roomId])
+        await conn.query("DELETE FROM Player WHERE id=?", [id])
 
         res.status(200).json(CRUD.DELETED("OK"))
     } catch (err) {

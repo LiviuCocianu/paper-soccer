@@ -1,7 +1,7 @@
 {
   "name": "paper-soccer-server",
   "version": "1.0.0",
-  "description": "",
+  "description": "MIT",
   "main": "index.js",
   "type": "module",
   "scripts": {

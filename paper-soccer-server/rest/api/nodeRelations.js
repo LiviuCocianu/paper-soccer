@@ -11,11 +11,11 @@ router.get("/", (req, res) => {
 
 // Get one
 router.get("/:id", (req, res) => {
-    const stateId = req.params.id
+    const nodeId = req.params.id
     const { point } = req.query
 
     let query = "SELECT * FROM PitchNodeRelation WHERE pitchNodeId=?"
-    const values = [stateId]
+    const values = [nodeId]
 
     if (point != undefined) {
         query += " AND point=?"
