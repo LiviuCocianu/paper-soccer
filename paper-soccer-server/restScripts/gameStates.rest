@@ -1,0 +1,15 @@
+GET http://localhost:3000/api/gameState/
+
+###
+
+GET http://localhost:3000/api/gameState/5pNA7t2w
+
+###
+
+PATCH http://localhost:3000/api/gameState/5pNA7t2w
+Content-Type: application/json
+
+{
+    "countdownValue": 3,
+    "activePlayer": 1
+}

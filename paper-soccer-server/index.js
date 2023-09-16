@@ -1,26 +1,14 @@
 import "dotenv/config"
-import { createServer } from "http"
-import { Server } from "socket.io"
+
+import { setupMySQL} from "./database/index.js"
+import { setupExpressApp } from "./rest/index.js";
+import { setupSocketIO } from "./socket/index.js";
 
 // Setup database
-import connection from "./database/index.js"
+setupMySQL()
 
-// Setup web socket server
-const httpServer = createServer()
-const io = new Server(httpServer, {
-    cors: {
-        origin: [`${process.env.CLIENT_ADDRESS}:${process.env.CLIENT_PORT}`]
-    }
-})
+// Setup Express app
+setupExpressApp()
 
-httpServer.listen(process.env.SERVER_PORT)
-
-// Attach event listeners to server and sockets
-io.on("connection", (socket) => {
-    var room = socket.handshake['query']['room'];
-    console.log("connected", room)
-
-    socket.on("disconnect", () => {
-        console.log("disconnected");
-    })
-})
+// Setup Socket.IO server
+setupSocketIO()

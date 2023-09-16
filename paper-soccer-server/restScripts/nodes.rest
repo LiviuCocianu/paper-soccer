@@ -1,0 +1,15 @@
+GET http://localhost:3000/api/nodes
+
+###
+
+POST http://localhost:3000/api/nodes
+Content-Type: application/json
+
+{
+    "point": 0,
+    "stateId": 1
+}
+
+###
+
+DELETE http://localhost:3000/api/nodes/1

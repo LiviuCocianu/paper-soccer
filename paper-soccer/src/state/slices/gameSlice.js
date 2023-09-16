@@ -4,7 +4,7 @@ import { GAME_STATUS } from "../../constants"
 const initialState = {
     nodes: [],
     activePlayer: 1,
-    status: "WAITING",
+    status: GAME_STATUS.WAITING,
     scores: [0, 0],
     ballPosition: 52,
     history: {},

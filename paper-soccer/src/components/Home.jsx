@@ -2,7 +2,7 @@ import { Link } from "react-router-dom"
 
 function Home() {
 	return (
-		<div className="flex items-center justify-center w-full h-full">
+		<div className="flex items-center justify-center w-full h-full animate-fadingIn">
 			<div className="flex flex-col space-y-6 select-none dark:text-dark">
 				<h1 className="font-crossedout text-7xl">Paper Soccer</h1>
 

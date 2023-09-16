@@ -15,6 +15,15 @@ export default {
 			colors: {
 				"dark": "#d9deff",
 				"nightsky": "#1b1b1d"
+			},
+			keyframes: {
+				fadeIn: {
+					'0%': { opacity: '0' },
+					'100%': { opacity: '1' },
+				}
+			},
+			animation: {
+				fadingIn: 'fadeIn 500ms linear 1',
 			}
 		},
 	},

@@ -1,0 +1,27 @@
+GET http://localhost:3000/api/rooms/
+
+###
+
+GET http://localhost:3000/api/rooms/FR6bwx1q
+
+###
+
+POST http://localhost:3000/api/rooms/
+Content-Type: application/json
+
+{
+    "gameMode": "CLASSIC"
+}
+
+###
+
+PATCH  http://localhost:3000/api/rooms/sVEV6rPV
+Content-Type: application/json
+
+{
+    "id": 1
+}
+
+###
+
+DELETE http://localhost:3000/api/rooms/9Ki7TmiG
