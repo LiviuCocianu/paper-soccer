@@ -1,25 +1,38 @@
 import express from "express"
-import pool from "../../database/index.js"
-import { composeUpdateSQL } from "../../utils.js"
-import { CRUD, getAll, selectQuery } from "../utils.js"
+import { CRUD, errorStatusFunc, getAll } from "../utils.js"
+import { query } from "../../prisma/client.js"
 
 const router = express.Router()
 
 // Get all
 router.get("/", (req, res) => {
-    getAll("Player", req, res)
+    getAll("player", req, res)
 })
 
-// Get one
+// Get for room
 router.get("/:id", (req, res) => {
     const inviteCode = req.params.id
-    selectQuery("SELECT * FROM Player WHERE invitedTo=?", [inviteCode], res)
+
+    query(async (prisma) => {
+        const roomExists = await prisma.room.findUnique({
+            where: { inviteCode }
+        })
+
+        if (roomExists == null) {
+            res.status(204).send()
+            return
+        }
+
+        const player = await prisma.player.findMany({
+            where: { invitedTo: inviteCode }
+        })
+
+        res.status(200).json(CRUD.READ("OK", player))
+    }, (e) => errorStatusFunc(res, e))
 })
 
 // Create
 router.post("/", async (req, res) => {
-    const conn = await pool.promise().getConnection()
-
     const { id, username, invitedTo } = req.body;
 
     if (!id) {
@@ -43,37 +56,37 @@ router.post("/", async (req, res) => {
         return
     }
 
-    try {
-        const [roomRes] = await conn.query("SELECT * FROM Room WHERE inviteCode=?", [invitedTo])
+    query(async (prisma) => {
+        const roomExists = await prisma.room.findUnique({
+            where: { inviteCode: invitedTo }
+        })
 
-        if(roomRes.length == 0) {
-            res.status(500).json(CRUD.ERROR("No room corresponding to this invite code was found!"))
+        if (roomExists == null) {
+            res.status(400).json(CRUD.ERROR("No room corresponding to this invite code was found!"))
             return
         }
 
-        const [playerCount] = await conn.query("SELECT COUNT(*) FROM Player WHERE invitedTo=?", [invitedTo])
-        const count = playerCount[0]["COUNT(*)"]
+        const playerCount = await prisma.player.count({
+            where: { invitedTo }
+        })
 
-        if (count == 2) {
+        if(playerCount == 2) {
             res.status(500).json(CRUD.ERROR("Room corresponding to this invite code is full!"))
             return
         }
 
-        const roomOrder = count + 1
+        const roomOrder = playerCount + 1
 
-        await conn.query(`INSERT INTO Player 
-            (id, roomOrder, score, invitedTo${username ? ", username" : ""}) 
-            VALUES (?, ?, ?, ?${username ? ", ?" : ""})
-        `, [id, roomOrder, 0, invitedTo, username])
+        await prisma.player.create({
+            data: { id, roomOrder, invitedTo, username }
+        })
 
-        const [player] = await conn.query("SELECT * FROM Player WHERE id=?", [id])
+        const player = await prisma.player.findUnique({
+            where: { id }
+        })
 
-        res.status(200).json(CRUD.CREATED("OK", player[0]))
-    } catch (err) {
-        res.status(500).json(CRUD.ERROR(err.message))
-    } finally {
-        pool.releaseConnection(conn)
-    }
+        res.status(200).json(CRUD.CREATED("OK", player))
+    }, (e) => errorStatusFunc(res, e))
 })
 
 // Update one
@@ -89,49 +102,50 @@ router.patch("/:id", async (req, res) => {
     }
 
     const id = req.params.id
-    const conn = await pool.promise().getConnection()
-    const composed = composeUpdateSQL("Player", req.body) + " WHERE `id`=?"
 
-    try {
-        const [playerById] = await conn.query("SELECT * FROM Player WHERE id=?", [id])
+    query(async (prisma) => {
+        const playerExists = await prisma.player.findUnique({
+            where: { id }
+        })
 
-        if (playerById.length == 0) {
+        if (playerExists == null) {
             res.status(204).json()
             return
         }
 
-        await conn.query(composed, [id])
-        const [player] = await conn.query("SELECT * FROM Player WHERE id=?", [id])
+        await prisma.player.update({
+            where: { id },
+            data: req.body
+        })
 
-        res.status(200).json(CRUD.UPDATED("OK", player[0]))
-    } catch (err) {
-        res.status(500).json(CRUD.ERROR(err.message))
-    } finally {
-        pool.releaseConnection(conn)
-    }
+        const updated = await prisma.player.findUnique({
+            where: { id }
+        })
+
+        res.status(200).json(CRUD.UPDATED("OK", updated))
+    }, (e) => errorStatusFunc(res, e))
 })
 
 // Delete one
 router.delete("/:id", async (req, res) => {
     const id = req.params.id
-    const conn = await pool.promise().getConnection()
 
-    try {
-        const [playerById] = await conn.query("SELECT id FROM Player WHERE id=?", [id])
+    query(async (prisma) => {
+        const playerExists = await prisma.player.findUnique({
+            where: { id }
+        })
 
-        if (playerById.length == 0) {
+        if (playerExists == null) {
             res.status(204).json()
             return
         }
 
-        await conn.query("DELETE FROM Player WHERE id=?", [id])
+        await prisma.player.delete({
+            where: { id }
+        })
 
         res.status(200).json(CRUD.DELETED("OK"))
-    } catch (err) {
-        res.status(500).json(CRUD.ERROR(err.message))
-    } finally {
-        pool.releaseConnection(conn)
-    }
+    }, (e) => errorStatusFunc(res, e))
 })
 
 export default router

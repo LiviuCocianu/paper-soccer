@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
-import { useParams } from "react-router-dom"
+import { useLocation, useParams } from "react-router-dom"
 import { drawGoalpostDetails, drawGoalpostOpenings, drawGridLines, setupNodes, drawPitchBorder, drawHistory } from "../canvas/pitchComponents"
 import { clearNodeEvents, registerNodeEvents } from "../canvas/events"
 import { setNodes } from "../state/slices/gameSlice"
@@ -19,8 +19,9 @@ function GameScreen() {
 	const { id } = useParams()
 
 	// Web socket state
-	const [socket, setSocket] = useState()
+	const [socket, setSocket] = useState(null)
 	const [socketError, setSocketError] = useState("")
+	const location = useLocation()
 
 	// Redux state
 	const theme = useSelector(state => state.theme)
@@ -48,6 +49,14 @@ function GameScreen() {
 	const height = useMemo(() => gridSquareSize * hInSquares + borderWidth, [gridSquareSize, borderWidth])
 
 	// TODO Validate if param ID exists in the database before rendering
+
+	useEffect(() => {
+		if(socket != null) {
+			if (!location.pathname.startsWith("/game") && socket != null) {
+				//socket.disconnect()
+			}
+		}
+	}, [location, socket])
 
 	// Connect to web socket server
 	useEffect(() => {

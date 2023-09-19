@@ -1,35 +1,47 @@
 import express from "express"
-import pool from "../../database/index.js"
-import { CRUD, getAll, selectQuery } from "../utils.js"
+import { CRUD, errorStatusFunc, getAll } from "../utils.js"
+import { query } from "../../prisma/client.js"
 
 const router = express.Router()
 
 // Get all
 router.get("/", (req, res) => {
-    getAll("PitchNode", req, res)
+    getAll("pitchnode", req, res)
 })
 
 // Get one
 router.get("/:id", (req, res) => {
-    const stateId = req.params.id
+    const { page = 1, size = process.env.SQL_SELECTION_LIMIT } = req.query
+    const pageSize = Math.max(1, Math.min(size, process.env.SQL_SELECTION_LIMIT))
+    const toSkip = Math.max(0, (page - 1) * pageSize)
+    
+    const inviteCode = req.params.id
     const { point } = req.query
 
-    let query = "SELECT * FROM PitchNode WHERE stateId=?"
-    const values = [stateId]
+    query(async (prisma) => {
+        const one = await prisma.room.findUnique({
+            where: { inviteCode },
+            select: { gamestate: {
+                select: { nodes: {
+                    skip: toSkip,
+                    take: pageSize,
+                    where: { point }
+                } }
+            } }
+        })
 
-    if(point != undefined) {
-        query += " AND point=?"
-        values.push(point)
-    }
+        if(one == null || one.gamestate.nodes.length == 0) {
+            res.status(204).send()
+            return
+        }
 
-    selectQuery(query, values, res)
+        res.status(200).json(CRUD.READ("OK", one.gamestate.nodes))
+    }, (e) => errorStatusFunc(res, e))
 })
 
 // Create
 router.post("/:id", async (req, res) => {
-    const conn = await pool.promise().getConnection()
-
-    const stateId = req.params.id
+    const inviteCode = req.params.id
     const { point } = req.body;
 
     if(point == undefined) {
@@ -40,63 +52,66 @@ router.post("/:id", async (req, res) => {
         return
     }
 
-    try {
-        const [stateRes] = await conn.query("SELECT * FROM GameState WHERE id=?", [stateId])
+    query(async (prisma) => {
+        const room = await prisma.room.findUnique({
+            where: { inviteCode },
+            select: { gamestate: true }
+        })
 
-        if(stateRes.length == 0) {
+        if (room == null || room.gamestate == null) {
             res.status(400).json(CRUD.ERROR("No game state corresponding to this state ID was found!"))
             return
         }
 
-        const [nodeRes] = await conn.query("INSERT INTO PitchNode (point, stateId) VALUES (?, ?)", [point, stateId])
-        const [node] = await conn.query("SELECT * FROM PitchNode WHERE id=?", [nodeRes.insertId])
+        const inserted = await prisma.pitchnode.create({
+            data: { point, stateId: room.gamestate.id }
+        })
 
-        res.status(200).json(CRUD.CREATED("OK", node[0]))
-    } catch (err) {
-        res.status(500).json(CRUD.ERROR(err.message))
-    } finally {
-        pool.releaseConnection(conn)
-    }
+        res.status(200).json(CRUD.CREATED("OK", inserted))
+    }, (e) => errorStatusFunc(res, e))
 })
 
 // Delete
 router.delete("/:id", async (req, res) => {
-    const stateId = req.params.id
-    const { point } = req.query
+    const inviteCode = req.params.id
+    let { point } = req.query
 
     if (point != undefined && point < 0) {
         res.status(500).json(CRUD.ERROR("Point cannot be negative!"))
         return
     }
 
-    const conn = await pool.promise().getConnection()
+    if(point) point = parseInt(point)
 
-    try {
-        let selQuery = "SELECT * FROM PitchNode WHERE stateId=?"
-        let delQuery = "DELETE FROM PitchNode WHERE stateId=?"
-        const values = [stateId]
+    query(async (prisma) => {
+        const node = await prisma.room.findUnique({
+            where: { inviteCode },
+            select: { gamestate: {
+                select: { 
+                    id: true,
+                    nodes: {
+                        where: { point }
+                    } }
+            } }
+        })
 
-        if(point != undefined) {
-            selQuery += "AND point=?"
-            delQuery += "AND point=?"
-            values.push(point)
-        }
-
-        const [nodeRes] = await conn.query(selQuery, values)
-
-        if (nodeRes.length == 0) {
-            res.status(204).json()
+        if (node == null || node.gamestate.nodes.length == 0) {
+            res.status(204).send()
             return
         }
 
-        await conn.query(delQuery, values)
+        if(point != undefined) {
+            await prisma.pitchnode.delete({
+                where: { id: node.gamestate.nodes[0].id }
+            })
+        } else {
+            await prisma.pitchnode.deleteMany({
+                where: { stateId: node.gamestate.id }
+            })
+        }
 
         res.status(200).json(CRUD.DELETED("OK"))
-    } catch (err) {
-        res.status(500).json(CRUD.ERROR(err.message))
-    } finally {
-        pool.releaseConnection(conn)
-    }
+    }, (e) => errorStatusFunc(res, e))
 })
 
 export default router

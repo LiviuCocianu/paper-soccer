@@ -2,7 +2,7 @@ import InputField from "../InputField"
 import NameField from "./NameField"
 import SubmitButton from "./SubmitButton"
 
-function JoinRoomForm() {
+function JoinRoomForm({ errorHandler }) {
 	return (
 		<div className="flex flex-col p-10 border-2 border-black dark:border-dark px-14 rounded-2xl animate-fadingIn">
 			<h1 className="text-5xl font-crossedout">Join a room</h1>

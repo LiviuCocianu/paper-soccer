@@ -1,0 +1,75 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model gamestate {
+  id                           Int              @id @default(autoincrement())
+  activePlayer                 Int              @default(1) @db.UnsignedTinyInt
+  status                       gamestate_status @default(WAITING)
+  mode                         gamestate_mode   @default(CLASSIC)
+  ballPosition                 Int              @default(52) @db.UnsignedSmallInt
+  countdownValue               Int              @default(3) @db.UnsignedTinyInt
+  room                         room?            @relation(fields: [roomId], references: [id])
+  nodes                        pitchnode[]
+  roomId                       Int?             @unique(map: "roomId")
+}
+
+model pitchnode {
+  id                 Int                 @id @default(autoincrement())
+  point              Int                 @db.UnsignedInt
+  stateId            Int
+  gamestate          gamestate           @relation(fields: [stateId], references: [id])
+  relations          pitchnoderelation[]
+
+  @@unique([point, stateId], map: "uniquePoint")
+  @@index([stateId], map: "stateId")
+}
+
+model pitchnoderelation {
+  id          Int       @id @default(autoincrement())
+  point       Int       @db.UnsignedInt
+  creator     Int       @default(1) @db.UnsignedTinyInt
+  nodeId Int
+  node        pitchnode @relation(fields: [nodeId], references: [id])
+
+  @@unique([point, nodeId], map: "uniqueRelation")
+  @@index([nodeId], map: "nodeId")
+}
+
+model player {
+  id        String @id @db.VarChar(20)
+  roomOrder Int    @default(1) @db.UnsignedTinyInt
+  username  String @default("Player") @db.VarChar(16)
+  score     Int    @default(0) @db.UnsignedSmallInt
+  room      room   @relation(fields: [invitedTo], references: [inviteCode])
+  invitedTo String @db.VarChar(8)
+
+  @@index([invitedTo], map: "invitedTo")
+}
+
+model room {
+  id                                Int        @id @default(autoincrement())
+  inviteCode                        String     @unique(map: "inviteCode") @db.VarChar(8)
+  gamestate                         gamestate?
+  players                           player[]
+  stateId                           Int?       @unique(map: "stateId")
+}
+
+enum gamestate_status {
+  WAITING
+  STARTING
+  ONGOING
+  FINISHED
+  SUSPENDED
+  REDUNDANT
+}
+
+enum gamestate_mode {
+  CLASSIC
+  BESTOF3
+}

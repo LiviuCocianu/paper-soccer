@@ -22,7 +22,7 @@ import GameScreen from './components/GameScreen'
 const router = createBrowserRouter(createRoutesFromElements(
 	<Route path="/" element={<App/>} errorElement={<ErrorPage/>}>
 		<Route element={<Home/>} index/>
-		<Route path="/multiplayer" element={<MultiplayerScreen/>}/>
+		<Route path="/multiplayer" element={<MultiplayerScreen />} errorElement={<ErrorPage />} />
 		<Route path="/game" element={<GameErrorPage/>}/>
 		<Route path="/game/:id" element={<GameScreen/>} errorElement={<ErrorPage/>} />
 	</Route>

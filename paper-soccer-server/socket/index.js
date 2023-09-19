@@ -1,6 +1,7 @@
 import { createServer } from "http"
 import { Server } from "socket.io"
 import expressApp from "../rest/index.js"
+import { query } from "../prisma/client.js"
 
 const server = createServer(expressApp)
 const port = process.env.SERVER_PORT || 8080
@@ -20,6 +21,7 @@ export function setupSocketIO() {
     io.on("connection", (socket) => {
         var room = socket.handshake['query']['room'];
         console.log("connected", room, socket.id)
+
 
         socket.on("disconnect", () => {
             console.log("disconnected");

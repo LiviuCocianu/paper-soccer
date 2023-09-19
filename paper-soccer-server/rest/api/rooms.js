@@ -1,47 +1,61 @@
 import express from "express"
-import pool from "../../database/index.js"
 import codeGenerator from "voucher-code-generator"
 import { GAME_MODE } from "../../../paper-soccer/src/constants.js"
-import { composeUpdateSQL } from "../../utils.js"
-import { CRUD, getAll, selectQuery } from "../utils.js"
+import { CRUD, errorStatusFunc, getAll } from "../utils.js"
+import { query } from "../../prisma/client.js"
 
 const router = express.Router()
 
 // Get all
 router.get("/", (req, res) => {
-    getAll("Room", req, res)
+    getAll("room", req, res)
 })
 
 // Get one
 router.get("/:id", (req, res) => {
     const inviteCode = req.params.id
-    selectQuery("SELECT * FROM Room WHERE inviteCode=?", [inviteCode], res)
+
+    query(async (prisma) => {
+        const one = await prisma.room.findUnique({
+            where: { inviteCode }
+        })
+
+        if (one == null) {
+            res.status(204).send()
+            return
+        }
+
+        res.status(200).json(CRUD.READ("OK", one))
+    }, (e) => errorStatusFunc(res, e))
 })
 
 // Create
 router.post("/", async (req, res) => {
-    const conn = await pool.promise().getConnection()
+    const { mode=GAME_MODE.CLASSIC } = req.body;
+    const inviteCode = codeGenerator.generate()[0]
 
-    const { gameMode=GAME_MODE.CLASSIC } = req.body;
-    const inviteCode = codeGenerator.generate()
-
-    if(!Object.keys(GAME_MODE).includes(gameMode)) {
-        res.status(500).json(CRUD.ERROR(`Invalid gameMode value! Valid options: ${Object.keys(GAME_MODE).join(", ")}`))
+    if(!Object.keys(GAME_MODE).includes(mode)) {
+        res.status(500).json(CRUD.ERROR(`Invalid game mode value! Valid options: ${Object.keys(GAME_MODE).join(", ")}`))
         return
     }
 
-    try {
-        const [roomRes] = await conn.query("INSERT INTO Room (inviteCode) VALUES (?)", [inviteCode])
-        const [stateRes] = await conn.query("INSERT INTO GameState (mode, roomId) VALUES (?, ?)", [gameMode, roomRes.insertId])
-        await conn.query("UPDATE Room SET stateId=? WHERE id=?", [stateRes.insertId, roomRes.insertId])
-        const [room] = await conn.query("SELECT * FROM Room WHERE inviteCode=?", [inviteCode])
+    query(async (prisma) => {
+        await prisma.room.create({
+            data: {
+                inviteCode,
+                gamestate: {
+                    create: { mode }
+                }
+            }
+        })
 
-        res.status(200).json(CRUD.CREATED("OK", room[0]))
-    } catch(err) {
-        res.status(500).json(CRUD.ERROR(err.message))
-    } finally {
-        pool.releaseConnection(conn)
-    }
+        const room = await prisma.room.findUnique({
+            where: { inviteCode },
+            include: { gamestate: true }
+        })
+
+        res.status(200).json(CRUD.CREATED("OK", room))
+    }, (e) => errorStatusFunc(res, e))
 })
 
 // Update one
@@ -57,55 +71,56 @@ router.patch("/:id", async (req, res) => {
     }
 
     const inviteCode = req.params.id
-    const conn = await pool.promise().getConnection()
-    const composed = composeUpdateSQL("Room", req.body) + " WHERE `id`=?"
 
-    try {
-        const [roomById] = await conn.query("SELECT id FROM Room WHERE inviteCode=?", [inviteCode])
+    query(async (prisma) => {
+        const room = await prisma.room.findUnique({
+            where: { inviteCode },
+            select: { id: true }
+        })
 
-        if (roomById.length == 0) {
+        if(room == null) {
             res.status(204).json()
             return
         }
 
-        const roomId = roomById[0].id
+        await prisma.room.update({
+            where: { id: room.id },
+            data: req.body
+        })
 
-        await conn.query(composed, [roomId])
-        const [room] = await conn.query("SELECT * FROM Room WHERE id=?", [roomId])
+        const updated = await prisma.room.findUnique({
+            where: { id: room.id }
+        })
 
-        res.status(200).json(CRUD.UPDATED("OK", room[0]))
-    } catch (err) {
-        res.status(500).json(CRUD.ERROR(err.message))
-    } finally {
-        pool.releaseConnection(conn)
-    }
+        res.status(200).json(CRUD.UPDATED("OK", updated))
+    }, (e) => errorStatusFunc(res, e))
 })
 
 // Delete one
 router.delete("/:id", async (req, res) => {
     const inviteCode = req.params.id
-    const conn = await pool.promise().getConnection()
 
-    try {
-        const [roomById] = await conn.query("SELECT id FROM Room WHERE inviteCode=?", [inviteCode])
-        
-        if (roomById.length == 0) {
+    query(async (prisma) => {
+        const room = await prisma.room.findUnique({
+            where: { inviteCode },
+            select: { id: true }
+        })
+
+        if (room == null) {
             res.status(204).json()
             return
         }
-        
-        const roomId = roomById[0].id
 
-        await conn.query("UPDATE Room SET stateId=? WHERE id=?", [null, roomId])
-        await conn.query("DELETE FROM GameState WHERE roomId=?", [roomId])
-        await conn.query("DELETE FROM Room WHERE id=?", [roomId])
+        await prisma.gamestate.delete({
+            where: { roomId: room.id }
+        })
+
+        await prisma.room.delete({
+            where: { id: room.id }
+        })
 
         res.status(200).json(CRUD.DELETED("OK"))
-    } catch (err) {
-        res.status(500).json(CRUD.ERROR(err.message))
-    } finally {
-        pool.releaseConnection(conn)
-    }
+    }, (e) => errorStatusFunc(res, e))
 })
 
 export default router

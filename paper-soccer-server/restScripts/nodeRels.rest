@@ -1,19 +1,19 @@
-GET http://localhost:3000/api/nodeRelations/
+GET http://localhost:3000/api/nodeRelations
 
 ###
 
-GET http://localhost:3000/api/nodeRelations/9
+GET http://localhost:3000/api/nodeRelations/14
 
 ###
 
-POST http://localhost:3000/api/nodeRelations/9
+POST http://localhost:3000/api/nodeRelations/14
 Content-Type: application/json
 
 {
-    "point": 9,
+    "point": 0,
     "creator": 2
 }
 
 ###
 
-DELETE http://localhost:3000/api/nodeRelations/9
+DELETE http://localhost:3000/api/nodeRelations/14?point=0

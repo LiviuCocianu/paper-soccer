@@ -3,10 +3,14 @@ import TickIcon from "../../assets/icons/TickIcon";
 import SubmitButton from "./SubmitButton";
 import NameField from "./NameField";
 import { GAME_MODE } from "../../constants";
+import { useNavigate } from "react-router-dom";
+import { fetchRequest } from "../../utils";
 
-function CreateRoomForm() {
-	const [gamemode, setGamemode] = useState(GAME_MODE.CLASSIC);
+function CreateRoomForm({ errorHandler }) {
+	const [gameMode, setGamemode] = useState(GAME_MODE.CLASSIC);
 	const [username, setUsername] = useState("");
+	const [submitDisabled, setSubmitDisabled] = useState(false)
+	const navigate = useNavigate()
 
 	const selectGamemode = (e) => {
 		const gm = e.currentTarget.dataset.gamemode;
@@ -14,6 +18,21 @@ function CreateRoomForm() {
 	}
 
 	const changeUsername = (e) => setUsername(e.target.value)
+
+	const sendForm = async () => {
+		if(!submitDisabled) {
+			setSubmitDisabled(true)
+
+			await fetchRequest("/api/rooms/", "POST", { gameMode } )
+				.then(res => res.json())
+				.then(async res => {
+					setSubmitDisabled(false)
+					navigate("/game/" + res.posted.inviteCode)
+				}).catch(err => {
+					errorHandler(err.message)
+				})
+		}
+	}
 
 	return (
 		<div className="flex flex-col p-10 space-y-6 border-2 border-black dark:border-dark px-14 rounded-2xl animate-fadingIn">
@@ -28,19 +47,19 @@ function CreateRoomForm() {
 					title="Classic"
 					desc="First to score a goal wins"
 					onClick={selectGamemode}
-					checked={gamemode == GAME_MODE.CLASSIC} />
+					checked={gameMode == GAME_MODE.CLASSIC} />
 
 				<GamemodeButton
 					id={GAME_MODE.BESTOF3}
 					title="Best of 3"
 					desc="Whoever scored the most amount of goals out of 3 wins"
 					onClick={selectGamemode}
-					checked={gamemode == GAME_MODE.BESTOF3} />
+					checked={gameMode == GAME_MODE.BESTOF3} />
 			</div>
 
 			<NameField value={username} onChange={changeUsername}/>
 
-			<SubmitButton text="Create" />
+			<SubmitButton text="Create" loadingColors="fill-white dark:fill-black" onClick={sendForm} disabled={submitDisabled} />
 		</div>
 	)
 }

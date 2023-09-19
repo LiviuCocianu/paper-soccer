@@ -1,8 +1,8 @@
-GET http://localhost:3000/api/rooms/
+GET http://localhost:3000/api/rooms
 
 ###
 
-GET http://localhost:3000/api/rooms/FR6bwx1q
+GET http://localhost:3000/api/rooms/xf5bHSy7
 
 ###
 
@@ -15,13 +15,13 @@ Content-Type: application/json
 
 ###
 
-PATCH  http://localhost:3000/api/rooms/sVEV6rPV
+PATCH  http://localhost:3000/api/rooms/bPeQDJ75
 Content-Type: application/json
 
 {
-    "id": 1
+    "inviteCode": "bPeQDJ12"
 }
 
 ###
 
-DELETE http://localhost:3000/api/rooms/9Ki7TmiG
+DELETE http://localhost:3000/api/rooms/vi82L2ZX

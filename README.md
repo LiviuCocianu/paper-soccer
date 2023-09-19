@@ -15,18 +15,21 @@ A dot (ball) will spawn in the middle of the pitch at the start of the game. In 
 - Players can also cross already drawn lines to move diagonally, but it won't count as a bounce since the line didn't collide with an endpoint 
 
 ## Technologies
-Build tool and dev environment: Vite
+### Build tool and dev environment:
+- Vite
 
 ### Front end
 - React.js (UI components)
 - TailwindCSS (styling)
 - Redux Toolkit (state management)
-- React Router (routing) 
+- React Router (client side routing)
+- Socket.io/client (web sockets)
 
 ### Back end
 - Node.js (runtime environment)
-- Express.js (server RESTful API)
-- Socket.io (web sockets) 
+- Express.js (server and RESTful API)
+- Socket.io (web sockets)
+- Prisma (database ORM - MySQL)
 
 ## Installation
 1. Navigate to your directory of choice
@@ -37,6 +40,7 @@ Build tool and dev environment: Vite
 4. Configure all the environment variables for client and server:
     1. Rename both `.env.example` files to `.env`
     2. Fill in the variables with your credentials
+5. Navigate to server directory and run the database schema setup: `npx prisma db push`
 
 ## Usage
 Run `npm run dev` for both the client and the server
@@ -48,38 +52,38 @@ Params marked with ? are optional, = represents the default value
 
 | Object | HTTP Request | Endpoints | Action | Body | Query references
 | :---: | :---: | --- | --- | --- | --- |
-| Rooms | GET | /api/rooms | Get all rooms | | 1?, 2?
+| Rooms | GET | /api/rooms | Get all rooms | | [1?, 2?](#query-params)
 | | GET | /api/rooms/:id | Get one room by invite code |
 | | POST | /api/rooms | Create one room | {<br/>&emsp;gameMode?: ["CLASSIC", "BESTOF3"]="CLASSIC"<br/>} |
 | | PATCH | /api/rooms/:id | Update one room by invite code | Any column to update
 | | DELETE | /api/rooms/:id | Delete one room by invite code |
 | &nbsp;
-| Players | GET | /api/players | Get all players | | 1?, 2?
+| Players | GET | /api/players | Get all players | | [1?, 2?](#query-params)
 | | GET | /api/players/:id | Get one player by invite code |
-| | POST | /api/players | Create one player | {<br/>&emsp;id: string,<br/>&emsp;username: string,<br/>&emsp;invitedTo: string<br/>} <br/><br/>(id must be a socket id) |
+| | POST | /api/players | Create one player | {<br/>&emsp;id: string,<br/>&emsp;username: string,<br/>&emsp;invitedTo: string<br/>} <br/><br/>(id must be a [socket id](https://socket.io/docs/v3/server-socket-instance/#socketid)) |
 | | PATCH | /api/players/:id | Update one player by ID | Any column to update
 | | DELETE | /api/players/:id | Delete one player by ID |
 | &nbsp;
-| Game states | GET | /api/gameStates | Get all game states | | 1?, 2?
+| Game states | GET | /api/gameStates | Get all game states | | [1?, 2?](#query-params)
 | | GET | /api/gameStates/:id | Get one state by invite code |
 | | PATCH | /api/gameStates/:id | Update one state by invite code | Any column to update
 | &nbsp;
-| Pitch nodes | GET | /api/nodes | Get all pitch nodes | | 1?, 2?
-| | GET | /api/nodes/:id | Get all pitch nodes by game state ID | | 3?
-| | POST | /api/nodes/:id | Create one node for one game state | {<br/>&emsp;point: integer<br/>} |
-| | DELETE | /api/nodes/:id | Delete all nodes by game state ID | | 3?
+| Pitch nodes | GET | /api/nodes | Get all pitch nodes | | [1?, 2?](#query-params)
+| | GET | /api/nodes/:id | Get all pitch nodes by invite code | | [1?, 2?, 3?](#query-params)
+| | POST | /api/nodes/:id | Create one node for game state by invite code | {<br/>&emsp;point: integer<br/>} |
+| | DELETE | /api/nodes/:id | Delete all nodes by invite code | | [3?](#query-params)
 | &nbsp;
-| Pitch node relations | GET | /api/nodeRelations | Get all node relations | | 1?, 2?
-| | GET | /api/nodeRelations/:id | Get all node relations for one node by ID | | 3?
+| Pitch node relations | GET | /api/nodeRelations | Get all node relations | | [1?, 2?](#query-params)
+| | GET | /api/nodeRelations/:id | Get all node relations for one node by ID | | [1?, 2?, 3?](#query-params)
 | | POST | /api/nodeRelations/:id | Create one node relation for one node by ID | {<br/>&emsp;point: integer,<br/>&emsp;creator?: integer=1<br/>} |
-| | DELETE | /api/nodeRelations/:id | Delete all node relations for one node by ID |  | 3?
+| | DELETE | /api/nodeRelations/:id | Delete all node relations for one node by ID |  | [3?](#query-params)
 
 ### Query params
-| Index | Param | Type | Limits | Description
-| --- | --- | --- | --- | --- |
-| 1 | size | integer | Between 0 and SQL_SELECTION_LIMIT (see .env) | The amount of rows to return with this request
-| 2 | page | integer | Starting with 1 | Used together with size. Page number of the paginated selected rows
-| 3 | point | integer | Between 0 and 104 (if pitch is 8x10 with 2x1 goal posts) | Index of the node on the pitch. For node relations, this is the location of the related node. See diagram #1 for how point indexing works
+| Index | Param | Type | Default | Limits | Description
+| --- | --- | --- | --- | --- | --- |
+| 1 | size | integer | SQL_SELECTION_LIMIT | Between 0 and SQL_SELECTION_LIMIT (see [.env.example](paper-soccer-server/.env.example)) | The amount of rows to return with this request
+| 2 | page | integer | 1 | Starting with 1 | Used together with size. Page number of the paginated selected rows
+| 3 | point | integer | | Between 0 and 104 (if pitch is 8x10 with 2x1 goal posts) | Index of the node on the pitch. For node relations, this is the location of the related node. See *diagram #1* on how point indexing works
 
 ## Figures
 
