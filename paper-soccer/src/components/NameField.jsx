@@ -1,4 +1,4 @@
-import InputField from "../InputField"
+import InputField from "./InputField"
 
 function NameField(props) {
 	return (

@@ -1,31 +1,34 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
-import { useLocation, useParams } from "react-router-dom"
+import { useParams } from "react-router-dom"
 import { drawGoalpostDetails, drawGoalpostOpenings, drawGridLines, setupNodes, drawPitchBorder, drawHistory } from "../canvas/pitchComponents"
 import { clearNodeEvents, registerNodeEvents } from "../canvas/events"
 import { setNodes } from "../state/slices/gameSlice"
-import { GAME_STATUS } from "../constants"
+import { GAME_STATUS, SOCKET_EVENT } from "../constants"
 
-import WaitingPopup from "./popups/WaitingPopup"
-import CountdownPopup from "./popups/CountdownPopup"
+import WaitingPopup from "../components/popups/WaitingPopup"
+import CountdownPopup from "../components/popups/CountdownPopup"
 
-import { io } from "socket.io-client";
-import ErrorPage from "./error/ErrorPage"
+import ErrorPage from "../screens/error/ErrorPage"
+import { fetchRequest } from "../utils"
+import LoadingScreen from "./LoadingScreen"
+import { connectToSocket, disconnectFromSocket } from "../state/slices/socketSlice"
+import { socketClient } from "../main"
 
 const [wInSquares, hInSquares] = [12, 8]
 
 function GameScreen() {
 	// Own state
-	const { id } = useParams()
+	const { id: inviteCode } = useParams()
+	const [isLoading, toggleLoading] = useState(true)
 
 	// Web socket state
-	const [socket, setSocket] = useState(null)
+	//const [socket, setSocket] = useState(undefined)
 	const [socketError, setSocketError] = useState("")
-	const location = useLocation()
 
 	// Redux state
 	const theme = useSelector(state => state.theme)
-	const { nodes, status, ballPosition, history, countdown } = useSelector(state => state.game)
+	const { clientUsername, nodes, status, ballPosition, history, countdown } = useSelector(state => state.game)
 	const dispatch = useDispatch()
 
 	// Theme colors for game interface
@@ -48,33 +51,58 @@ function GameScreen() {
 	const width = useMemo(() => gridSquareSize * wInSquares + borderWidth, [gridSquareSize, borderWidth])
 	const height = useMemo(() => gridSquareSize * hInSquares + borderWidth, [gridSquareSize, borderWidth])
 
-	// TODO Validate if param ID exists in the database before rendering
-
+	// Disconnect on socket error
 	useEffect(() => {
-		if(socket != null) {
-			if (!location.pathname.startsWith("/game") && socket != null) {
-				//socket.disconnect()
-			}
+		dispatch(disconnectFromSocket())
+	}, [socketError])
+
+	// Setup: Handle socket connect/disconnect
+	useEffect(() => {
+		const onConnect = () => {
+			toggleLoading(false)
 		}
-	}, [location, socket])
 
-	// Connect to web socket server
-	useEffect(() => {
-		const skt = io(`${import.meta.env.VITE_SERVER_ADDRESS}:${import.meta.env.VITE_SERVER_PORT}`, {
-			query: `room=${id}`
-		})
-
-		skt.on('connect_error', () => {
+		const onConnectError = () => {
 			setSocketError("We have encountered a connection problem on our side. Please try again later")
-			skt.disconnect()
-		})
+		}
 
-		setSocket(skt)
-	}, [id])
+		const onPlayerError = (res) => {
+			setSocketError(res.message)
+		}
 
+		(async () => {
+			// Only connect if invite code in route is valid
+			await fetchRequest("/api/rooms/" + inviteCode)
+				.then(res => {
+					if (res.status == 200) {
+						dispatch(connectToSocket({ room: inviteCode, username: clientUsername }))
+
+						socketClient.socket.on("connect", onConnect)
+						socketClient.socket.on("connect_error", onConnectError)
+						socketClient.socket.on(SOCKET_EVENT.PLAYER_ERROR, onPlayerError)
+					} else if (res.status == 204) {
+						setSocketError("Oops! This invite code doesn't belong to any room..")
+					}
+				}).catch(() => {
+					setSocketError("We have encountered a problem on our side. Please try again later")
+				})
+		})()
+
+		return () => {
+			socketClient.socket.off("connect", onConnect)
+			socketClient.socket.off("connect_error", onConnectError)
+			socketClient.socket.off(SOCKET_EVENT.PLAYER_ERROR, onPlayerError)
+
+			dispatch(disconnectFromSocket())
+		}
+	}, [])
+
+	// Fetch canvas context when page is successfully loaded
 	useEffect(() => {
-		setContext(canvasElement.current.getContext("2d", { willReadFrequently: true }))
-	}, [ctx, canvasElement]);
+		if(!isLoading && socketError.length == 0) {
+			setContext(canvasElement.current.getContext("2d", { willReadFrequently: true }))
+		}
+	}, [isLoading, socketError, ctx, canvasElement]);
 
 	// Redraw pitch frame on theme or size changes
 	useEffect(() => {
@@ -118,11 +146,13 @@ function GameScreen() {
 
 	if(socketError.length > 0) return <ErrorPage message={socketError}/>
 
+	if (isLoading) return <LoadingScreen />
+
 	return (
 		<div className="flex flex-col items-center justify-center w-full h-full space-y-10 select-none dark:text-dark">
 			{
 				status == "WAITING" ? (
-					<WaitingPopup inviteCode={id}/>
+					<WaitingPopup inviteCode={inviteCode}/>
 				) : status == "STARTING" ? (
 					<CountdownPopup count={countdown}/>
 				) : <></>

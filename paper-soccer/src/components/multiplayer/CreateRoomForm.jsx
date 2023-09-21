@@ -1,15 +1,18 @@
 import { useState } from "react";
 import TickIcon from "../../assets/icons/TickIcon";
-import SubmitButton from "./SubmitButton";
-import NameField from "./NameField";
+import SubmitButton from "../SubmitButton";
+import NameField from "../NameField";
 import { GAME_MODE } from "../../constants";
 import { useNavigate } from "react-router-dom";
 import { fetchRequest } from "../../utils";
+import { useDispatch } from "react-redux";
+import { setClientUsername } from "../../state/slices/gameSlice";
 
 function CreateRoomForm({ errorHandler }) {
 	const [gameMode, setGamemode] = useState(GAME_MODE.CLASSIC);
 	const [username, setUsername] = useState("");
 	const [submitDisabled, setSubmitDisabled] = useState(false)
+	const dispatch = useDispatch()
 	const navigate = useNavigate()
 
 	const selectGamemode = (e) => {
@@ -25,8 +28,9 @@ function CreateRoomForm({ errorHandler }) {
 
 			await fetchRequest("/api/rooms/", "POST", { gameMode } )
 				.then(res => res.json())
-				.then(async res => {
+				.then(res => {
 					setSubmitDisabled(false)
+					dispatch(setClientUsername(username))
 					navigate("/game/" + res.posted.inviteCode)
 				}).catch(err => {
 					errorHandler(err.message)

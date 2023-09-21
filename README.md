@@ -62,7 +62,7 @@ Params marked with ? are optional, = represents the default value
 | | GET | /api/players/:id | Get one player by invite code |
 | | POST | /api/players | Create one player | {<br/>&emsp;id: string,<br/>&emsp;username: string,<br/>&emsp;invitedTo: string<br/>} <br/><br/>(id must be a [socket id](https://socket.io/docs/v3/server-socket-instance/#socketid)) |
 | | PATCH | /api/players/:id | Update one player by ID | Any column to update
-| | DELETE | /api/players/:id | Delete one player by ID |
+| | DELETE | /api/players/:id | Delete one player by ID. Own room will be deleted if it's empty, post player deletion |
 | &nbsp;
 | Game states | GET | /api/gameStates | Get all game states | | [1?, 2?](#query-params)
 | | GET | /api/gameStates/:id | Get one state by invite code |
@@ -81,7 +81,7 @@ Params marked with ? are optional, = represents the default value
 ### Query params
 | Index | Param | Type | Default | Limits | Description
 | --- | --- | --- | --- | --- | --- |
-| 1 | size | integer | SQL_SELECTION_LIMIT | Between 0 and SQL_SELECTION_LIMIT (see [.env.example](paper-soccer-server/.env.example)) | The amount of rows to return with this request
+| 1 | size | integer | SQL_SELECTION_LIMIT | Between 1 and SQL_SELECTION_LIMIT (see [.env.example](paper-soccer-server/.env.example)) | The amount of rows to return with this request
 | 2 | page | integer | 1 | Starting with 1 | Used together with size. Page number of the paginated selected rows
 | 3 | point | integer | | Between 0 and 104 (if pitch is 8x10 with 2x1 goal posts) | Index of the node on the pitch. For node relations, this is the location of the related node. See *diagram #1* on how point indexing works
 
@@ -95,7 +95,7 @@ Params marked with ? are optional, = represents the default value
     ![database structure](readme_assets/database_classes.png)
 
 ## Appendix
-- These [mockups](readme_assets/initial_mockups.pdf) were made in Photoshop and used for creating the UI
+- These [mockups](readme_assets/initial_mockups.pdf) were made in Photoshop and used as reference for creating the UI
 - The following algorithm was designed and used for the bot movement:
 
     1. Consider neighboring points in all directions

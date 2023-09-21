@@ -2,6 +2,7 @@ import { createSlice } from "@reduxjs/toolkit"
 import { GAME_STATUS } from "../../constants"
 
 const initialState = {
+    clientUsername: "Player", 
     nodes: [],
     activePlayer: 1,
     status: GAME_STATUS.WAITING,
@@ -24,6 +25,10 @@ export const gameSlice = createSlice({
     name: "game",
     initialState,
     reducers: {
+        setClientUsername: (state, action) => {
+            state.clientUsername = action.payload
+            return state
+        },
         setNodes: (state, action) => {
             state.nodes = action.payload
             return state
@@ -62,5 +67,5 @@ export const gameSlice = createSlice({
     }
 })
 
-export const { setNodes, setActivePlayer, setStatus, setScoreFor, setBallPosition, setHistory, setCountdown } = gameSlice.actions
+export const { setClientUsername, setNodes, setActivePlayer, setStatus, setScoreFor, setBallPosition, setHistory, setCountdown } = gameSlice.actions
 export default gameSlice.reducer

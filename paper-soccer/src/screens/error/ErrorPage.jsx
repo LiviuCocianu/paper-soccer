@@ -1,6 +1,5 @@
-import React from "react";
 import { Link, useRouteError } from "react-router-dom"
-import ThemeSwitch from "../ThemeSwitch";
+import ThemeSwitch from "../../components/ThemeSwitch";
 
 function ErrorPage({ message }) {
 	const error = useRouteError();

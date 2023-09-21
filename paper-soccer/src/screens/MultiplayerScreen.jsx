@@ -1,7 +1,7 @@
 import { useState } from "react"
-import CreateRoomForm from "./multiplayer/CreateRoomForm"
-import JoinRoomForm from "./multiplayer/JoinRoomForm"
-import ErrorPage from "./error/ErrorPage";
+import CreateRoomForm from "../components/multiplayer/CreateRoomForm"
+import JoinRoomForm from "../components/multiplayer/JoinRoomForm"
+import ErrorPage from "../screens/error/ErrorPage";
 
 function MultiplayerScreen() {
 	const [createForm, toggleForm] = useState(true);

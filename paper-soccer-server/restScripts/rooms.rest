@@ -24,4 +24,4 @@ Content-Type: application/json
 
 ###
 
-DELETE http://localhost:3000/api/rooms/vi82L2ZX
+DELETE http://localhost:3000/api/rooms/CBZaJy5h

@@ -12,5 +12,10 @@ export const GAME_MODE = {
     BESTOF3: "BESTOF3"
 }
 
+export const SOCKET_EVENT = {
+    PLAYER_ERROR: "player:error"
+}
+
 Object.freeze(GAME_STATUS)
 Object.freeze(GAME_MODE)
+Object.freeze(SOCKET_EVENT)

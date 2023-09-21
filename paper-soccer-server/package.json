@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "dev": "nodemon index.js",
-    "prisma-dev": "npx prisma migrate dev"
+    "prisma-dev": "npx prisma migrate dev",
+    "const-sync": "node syncConstants"
   },
   "author": "Liviu Cocianu",
   "license": "MIT",

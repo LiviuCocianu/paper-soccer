@@ -140,11 +140,26 @@ router.delete("/:id", async (req, res) => {
             return
         }
 
-        await prisma.player.delete({
+        const deleted = await prisma.player.delete({
             where: { id }
         })
 
-        res.status(200).json(CRUD.DELETED("OK"))
+        if(!deleted) return
+
+        const playerCount = await prisma.player.count({
+            where: { invitedTo: deleted.invitedTo }
+        })
+
+        if(playerCount == 0) {
+            await prisma.room.delete({
+                where: { inviteCode: deleted.invitedTo }
+            })
+
+            res.status(200).json(CRUD.DELETED("OK! Deleted room: unused"))
+        } else {
+            res.status(200).json(CRUD.DELETED("OK"))
+        }
+
     }, (e) => errorStatusFunc(res, e))
 })
 

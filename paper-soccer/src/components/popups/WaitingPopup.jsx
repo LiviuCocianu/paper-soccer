@@ -24,7 +24,7 @@ function WaitingPopup({ inviteCode }) {
 			<div className="w-[40rem] aspect-video bg-[url('/images/paper-light.png')] dark:bg-[url('/images/paper-dark.png')] flex flex-col space-y-10 items-center justify-center rounded-xl">
 				<div className="flex flex-col items-center justify-center space-y-2 font-bold dark:font-normal font-strokedim">
 					<h1 className="text-5xl">Waiting for opponent...</h1>
-					<h2 className="text-2xl">Give this invite code to your friend!</h2>
+					<h2 className="mx-20 text-2xl text-center">Give this invite code to your friend or give them the link to this page!</h2>
 				</div>
 
 				<div className="relative flex flex-col items-center justify-center space-y-2 font-heycomic">

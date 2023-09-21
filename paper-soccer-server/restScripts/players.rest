@@ -11,7 +11,7 @@ Content-Type: application/json
 
 {
     "id": "j8i8JquhbvzYhxmyAAAC",
-    "invitedTo": "xf5bHSy7"
+    "invitedTo": "LoyCnupE"
 }
 
 ###
@@ -25,4 +25,4 @@ Content-Type: application/json
 
 ###
 
-DELETE http://localhost:3000/api/players/j8i8JquhbvzYhxmyAAAB
+DELETE http://localhost:3000/api/players/KvM_pfinRdk134ZQAAAB
