@@ -17,7 +17,6 @@ class SocketClient {
     disconnect() {
         return new Promise((resolve) => {
             this.socket.disconnect(() => {
-                this.socket = null;
                 resolve();
             });
         });

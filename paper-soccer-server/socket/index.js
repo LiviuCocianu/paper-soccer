@@ -1,11 +1,19 @@
+import app from "../rest/index.js"
+import { query } from "../prisma/client.js"
+
 import { createServer } from "http"
 import { Server } from "socket.io"
-import expressApp from "../rest/index.js"
-import { query } from "../prisma/client.js"
-import { SOCKET_EVENT } from "../constants.js"
 
-const server = createServer(expressApp)
+import { onDisconnect } from "./listeners.js"
+import { GamestateEmitter, PlayerEmitter } from "./emitters.js"
+import { GAME_STATUS } from "../constants.js"
+
+const server = createServer(app)
 const port = process.env.SERVER_PORT || 8080
+
+server.listen(port, () => {
+    console.log(`Listening on port ${port}`);
+})
 
 const io = new Server(server, {
     cors: {
@@ -13,73 +21,149 @@ const io = new Server(server, {
     }
 })
 
-export function setupSocketIO() {
-    server.listen(port, () => {
-        console.log(`Listening on port ${port}`);
-    })
+export default io
 
-    // Attach event listeners to server and sockets
-    io.on("connection", (socket) => {
-        const { room, username="Player" } = socket.handshake.query
+// Wipe the previous data from the database as we don't need to persist it across server restarts
+query(async (prisma) => {
+    const dataCount = await prisma.room.count()
+    
+    if(dataCount > 0) {
+        /*
+            The database is structured like a tree, where the Room table sits at the very top,
+            so deleting all the rooms will cascade to all the other remaining tables
+        */
+        await prisma.room.deleteMany({})
+        console.log("Wiped previous data from database!")
+    }
+}, (e) => console.warn("Couldn't connect to database!"))
 
-        query(async (prisma) => {
-            const playerCount = await prisma.player.count({
-                where: { invitedTo: room }
-            })
+// Attach event listeners to sockets
+io.on("connection", (socket) => {
+    // Setup connection
+    let { room: inviteCode, username = "Player" } = socket.handshake.query
 
-            if(playerCount == 2) {
-                socket.emit(SOCKET_EVENT.PLAYER_ERROR, { message: "Encountered a problem while joining: this room is full!" })
-                socket.disconnect()
-                return
+    if(!inviteCode || inviteCode.length != 8) {
+        socket.disconnect()
+        return
+    }
+    
+    username = username.slice(0, 16)
+
+    query(async (prisma) => {
+        const playerCount = await prisma.player.count({
+            where: { invitedTo: inviteCode }
+        })
+
+        if (playerCount == 2) {
+            PlayerEmitter.emitError(socket, "Encountered a problem while joining: this room is full!")
+            return
+        }
+
+        const room = await prisma.room.findUnique({
+            where: { inviteCode },
+            select: { gamestate: true }
+        })
+
+        if (room != null && room.gamestate.status != GAME_STATUS.WAITING) {
+            PlayerEmitter.emitError(socket, "Encountered a problem while joining: this room is locked!")
+            return
+        }
+
+        const player = await prisma.player.create({
+            data: {
+                id: socket.id,
+                invitedTo: inviteCode,
+                username: username.length == 0 ? "Player" : username,
+                roomOrder: playerCount + 1
             }
+        })
 
-            const player = await prisma.player.create({
+        if (!player) {
+            PlayerEmitter.emitError(socket, "Encountered a problem while joining: couldn't add player")
+            return
+        }
+
+        socket.join(inviteCode)
+
+        console.log("");
+        console.log(`Player (NAME=${player.username}, ID=${socket.id}) joined a room (INVITE=${player.invitedTo})`);
+
+        PlayerEmitter.emitRoomOrder(socket, player.roomOrder)
+
+        // Tell the client to update the scoreboard
+        const players = await prisma.player.findMany({
+            where: { invitedTo: inviteCode }
+        })
+
+        if(players.length > 0) {
+            players.forEach(pl => {
+                PlayerEmitter.emitNameUpdated(inviteCode, pl.roomOrder, pl.username)
+            })
+        }
+
+        // Start the game if room got full
+        if(playerCount == 1) {
+            const statusUpdated = await prisma.room.update({
+                where: { inviteCode },
                 data: {
-                    id: socket.id,
-                    invitedTo: room,
-                    username,
+                    gamestate: { update: {
+                        data: {
+                            status: GAME_STATUS.STARTING
+                        }
+                    }}
                 }
             })
 
-            if(!player) {
-                socket.emit(SOCKET_EVENT.PLAYER_ERROR, { message: "Encountered a problem while joining: couldn't add player" })
-                socket.disconnect()
-                return
-            }
-            
-            socket.join(room)
-            
-            console.log("");
-            console.log(`Player (NAME=${username}, ID=${socket.id}) joined a room (INVITE=${room})`);
-        }, (e) => console.log(e))
+            if(!statusUpdated) return
 
-        socket.on("disconnect", () => {
-            query(async (prisma) => {
-                const player = await prisma.player.delete({
-                    where: { id: socket.id }
-                })
-
-                if(!player) return
+            // Emit status change to client and keep going on acknowledgement
+            GamestateEmitter.emitStatusUpdated(inviteCode, GAME_STATUS.STARTING, () => {
+                let counter = 5
 
                 console.log("");
-                console.log(`Player (NAME=${player.username}, ID=${player.id}) disconnected from room (INVITE=${player.invitedTo})`);
-            
-                const playerCount = await prisma.player.count({
-                    where: { invitedTo: room }
-                })
+                console.log(`Room (INVITE=${inviteCode}) is about to start a game!`);
 
-                if(playerCount == 0) {
-                    const deleted = await prisma.room.delete({
-                        where: { inviteCode: room }
+                const countdown = setInterval(async () => {
+                    const roomWithState = await prisma.room.findUnique({
+                        where: { inviteCode },
+                        select: { id: true, gamestate: true }
                     })
 
-                    if (!deleted) return
+                    // Cancel countdown if status changes while counting
+                    if (roomWithState.gamestate.status != GAME_STATUS.STARTING) {
+                        clearInterval(countdown)
+                        return
+                    }
 
-                    console.log(`Room (INVITE=${deleted.inviteCode}) was deleted: no players left, room went unused`);
-                }
+                    if (counter > 1) {
+                        // Emit the countdown to the client so it knows what to diplay
+                        GamestateEmitter.emitCountdownUpdated(inviteCode, counter - 1, () => {
+                            counter -= 1
+                        })
+                    } else {
+                        clearInterval(countdown)
+
+                        const statusUpdated = await prisma.gamestate.update({
+                            where: { roomId: roomWithState.id },
+                            data: { status: GAME_STATUS.ONGOING }
+                        })
+
+                        if (!statusUpdated) return
+
+                        // Tell the client the game started
+                        GamestateEmitter.emitStatusUpdated(inviteCode, GAME_STATUS.ONGOING)
+
+                        console.log("");
+                        console.log(`Room (INVITE=${inviteCode}) started the game!`);
+                    }
+                }, 1000)
             })
-        })
+        }
+    }, (e) => {
+        console.log(e)
+        socket.disconnect()
     })
-}
 
-export default io
+    // Socket events
+    onDisconnect(socket)
+})

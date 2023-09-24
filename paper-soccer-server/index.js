@@ -1,10 +1,8 @@
+// Initialize environment variables
 import "dotenv/config"
 
-import { setupExpressApp } from "./rest/index.js";
-import { setupSocketIO } from "./socket/index.js";
+// Initialize express server
+import "./rest/index.js"
 
-// Setup Express app
-setupExpressApp()
-
-// Setup Socket.IO server
-setupSocketIO()
+// Initialize socket events
+import "./socket/index.js"

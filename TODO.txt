@@ -1,0 +1,24 @@
+- Remove countdownValue from database diagram
+
+- Restructure database diagram so Room sits at the very top
+
+Changes 24/11/23:
+* When deleting a room entry from the database, all relevant records associated with it will be cascade-deleted
+
+* Data will no longer be persisted between server restarts as there is no need to persist room data on shutdown
+
+* Finished socket communication for game setup phase (player count requirement, countdown, game status change)
+
+* Added popup for game status "SUSPENDED"
+
+* Added extra field validation for invite code and username on the server side
+
+* Moved canvas-related state, effects and events to a dedicated component instead of separate plain JS files
+
+* Added dotted line on node hover (move preview) to indicate where you can move the ball. Only the active player can see and use it
+
+* Disabled node interaction for the inactive player
+
+* Fixed bug that allowed one of the players to restart the match if they refreshed the page
+
+* Fixed bug that made socket errors overwrite each other in GameScreen when two or more errors occured at a time. Now the first error to appear takes priority

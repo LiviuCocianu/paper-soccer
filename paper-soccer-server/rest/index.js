@@ -4,14 +4,12 @@ import cors from "cors"
 
 const app = express()
 
-export function setupExpressApp() {
-    app.use(express.json())
-    app.use(cors({
-        origin: `${process.env.CLIENT_ADDRESS}:${process.env.CLIENT_PORT}`,
-        methods: ["GET", "POST", "PATCH", "DELETE"]
-    }))
+app.use(express.json())
+app.use(cors({
+    origin: `${process.env.CLIENT_ADDRESS}:${process.env.CLIENT_PORT}`,
+    methods: ["GET", "POST", "PATCH", "DELETE"]
+}))
 
-    app.use("/api", apiRoute)
-}
+app.use("/api", apiRoute)
 
 export default app

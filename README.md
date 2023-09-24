@@ -62,7 +62,7 @@ Params marked with ? are optional, = represents the default value
 | | GET | /api/players/:id | Get one player by invite code |
 | | POST | /api/players | Create one player | {<br/>&emsp;id: string,<br/>&emsp;username: string,<br/>&emsp;invitedTo: string<br/>} <br/><br/>(id must be a [socket id](https://socket.io/docs/v3/server-socket-instance/#socketid)) |
 | | PATCH | /api/players/:id | Update one player by ID | Any column to update
-| | DELETE | /api/players/:id | Delete one player by ID. Own room will be deleted if it's empty, post player deletion |
+| | DELETE | /api/players/:id | Delete one player by ID. The room they were playing in will also be deleted if it gets empty |
 | &nbsp;
 | Game states | GET | /api/gameStates | Get all game states | | [1?, 2?](#query-params)
 | | GET | /api/gameStates/:id | Get one state by invite code |
