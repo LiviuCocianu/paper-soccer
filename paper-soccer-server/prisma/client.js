@@ -7,8 +7,8 @@ const prisma = new PrismaClient()
  * @param {function(PrismaClient):Promise<void>} func
  * @param {function(Error):void} [errorFunc]
  */
-export function query(func, errorFunc=undefined) {
-    func(prisma).then(async () => {
+export async function query(func, errorFunc=undefined) {
+    await func(prisma).then(async () => {
         await prisma.$disconnect()
     }).catch(async (e) => {
         if (errorFunc) errorFunc(e)

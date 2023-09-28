@@ -2,8 +2,11 @@
 
 "Paper soccer" is a web application game based on the 2-player, paper-and-pencil game with the same name. The setting of the game is a grid called "pitch", with two goalposts positioned west and east of the pitch.
 
+## Motivation
+I chose to pursue this project when I was playing some online social games with my friends (Skribbl, UNO, Haxball) and remembered this one pen-and-paper game I'd play in school during breaks: paper soccer. Upon research, I couldn't find many implementations of this idea online and I wanted a "paper soccer" app that would allow users to quickly create a match, play and move on, no bothersome authentication required. It's quite a niche and fun game, but at the same time it's easy to implement and perfect to practice my programming skills on, hence another reason why I pursued this project
+
 ## Gameplay
-A dot (ball) will spawn in the middle of the pitch at the start of the game. In order to move the ball, players have to draw a 1-square long line per turn, straight or diagonal, relative to the ball. Players can get additional moves in one turn by "bouncing" the ball on the endpoints of the lines created by previous moves or on the boundaries of the pitch. There are two game-ending conditions: one player moves the ball inside the opponent's goalpost and wins OR the ball is moved in a position that doesn't allow any more moves (this will be considered a draw and no one wins)
+A dot (ball) will spawn in the middle of the pitch at the start of the game. In order to move the ball, players have to draw a 1-square long line per turn, straight or diagonal, relative to the ball. Players can get additional moves in one turn by "bouncing" the ball on the endpoints of lines created by previous moves or on the boundaries of the pitch. There are two game-ending conditions: one player moves the ball inside the opponent's goalpost and wins OR the ball is moved in a position that doesn't allow any more moves (this will be considered a loss for the player that moved the ball)
 
 ## Mechanics 
 - The pitch will be 8x10 with 2x1 goalposts 
@@ -11,7 +14,7 @@ A dot (ball) will spawn in the middle of the pitch at the start of the game. In 
 - Players can move in a straight or diagonal line once per turn for one square
 - Bouncing: 
     - **Player bounce**: If the endpoint of a line intersects with an already drawn endpoint, the player can move for one more turn 
-    - **Boundary bounce**: If the endpoint of a line intersects with the boundaries, the player can move for one more turn 
+    - **Boundary bounce**: If the endpoint of a line intersects with the boundaries, the player can move for one more turn. Boundary bounces can only be done diagonally!
 - Players can also cross already drawn lines to move diagonally, but it won't count as a bounce since the line didn't collide with an endpoint 
 
 ## Technologies
@@ -74,7 +77,7 @@ Params marked with ? are optional, = represents the default value
 | | DELETE | /api/nodes/:id | Delete all nodes by invite code | | [3?](#query-params)
 | &nbsp;
 | Pitch node relations | GET | /api/nodeRelations | Get all node relations | | [1?, 2?](#query-params)
-| | GET | /api/nodeRelations/:id | Get all node relations for one node by ID | | [1?, 2?, 3?](#query-params)
+| | GET | /api/nodeRelations/:id | Get all node relations for one node by point | | [1?, 2?, 4](#query-params)
 | | POST | /api/nodeRelations/:id | Create one node relation for one node by ID | {<br/>&emsp;point: integer,<br/>&emsp;creator?: integer=1<br/>} |
 | | DELETE | /api/nodeRelations/:id | Delete all node relations for one node by ID |  | [3?](#query-params)
 
@@ -84,6 +87,7 @@ Params marked with ? are optional, = represents the default value
 | 1 | size | integer | SQL_SELECTION_LIMIT | Between 1 and SQL_SELECTION_LIMIT (see [.env.example](paper-soccer-server/.env.example)) | The amount of rows to return with this request
 | 2 | page | integer | 1 | Starting with 1 | Used together with size. Page number of the paginated selected rows
 | 3 | point | integer | | Between 0 and 104 (if pitch is 8x10 with 2x1 goal posts) | Index of the node on the pitch. For node relations, this is the location of the related node. See *diagram #1* on how point indexing works
+| 4 | stateId | integer |  | Starting with 1 | Database ID for the game state the object belongs to
 
 ## Figures
 

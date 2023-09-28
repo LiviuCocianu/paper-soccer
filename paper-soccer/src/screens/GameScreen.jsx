@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
 import { useParams } from "react-router-dom"
-import { resetGameState, setCountdown, setStatus } from "../state/slices/gameSlice"
+import { addHistoryMove, resetGameState, setActivePlayer, setBallPosition, setCountdown, setStatus } from "../state/slices/gameSlice"
 import { GAME_STATUS, SOCKET_EVENT } from "../constants"
 
 import WaitingPopup from "../components/popups/WaitingPopup"
@@ -14,6 +14,7 @@ import GameCanvas from "../components/GameCanvas"
 import { fetchRequest } from "../utils"
 import { connectToSocket, disconnectFromSocket } from "../state/slices/socketSlice"
 import { socketClient } from "../main"
+import FinishPopup from "../components/popups/FinishPopup"
 
 
 function GameScreen() {
@@ -41,6 +42,10 @@ function GameScreen() {
 	// Redux state
 	const { clientUsername, activePlayer, status, countdown } = useSelector(state => state.game)
 	const dispatch = useDispatch()
+
+	const handleNodeClick = useCallback((node) => {
+		socketClient.socket.emit(SOCKET_EVENT.NODE_CLICKED, inviteCode, ownOrder, node)
+	}, [inviteCode, ownOrder])
 
 	// Disconnect on socket error
 	useEffect(() => {
@@ -105,6 +110,15 @@ function GameScreen() {
 			setOwnOrder(orderNoFromSocket)
 		}
 
+		const onNodeConnected = (point, player, bounceable) => {
+			dispatch(addHistoryMove({ point, player }))
+			dispatch(setBallPosition(point))
+
+			if(!bounceable) {
+				dispatch(setActivePlayer(player == 1 ? 2 : 1))
+			}
+		}
+
 		(async () => {
 			// Only connect if invite code in route is valid
 			await fetchRequest("/api/rooms/" + inviteCode)
@@ -122,6 +136,7 @@ function GameScreen() {
 						socketClient.socket.on(SOCKET_EVENT.PLAYER_NAME_UPDATED, onPlayerNameUpdate)
 						socketClient.socket.on(SOCKET_EVENT.PLAYER_SCORE_UPDATED, onPlayerScoreUpdate)
 						socketClient.socket.on(SOCKET_EVENT.PLAYER_ROOM_ORDER, onPlayerRoomOrder)
+						socketClient.socket.on(SOCKET_EVENT.NODE_CONNECTED, onNodeConnected)
 					} else if (res.status == 204) {
 						socketError.current = "Oops! This invite code doesn't belong to any room.."
 					}
@@ -144,6 +159,7 @@ function GameScreen() {
 				socketClient.socket.off(SOCKET_EVENT.PLAYER_NAME_UPDATED, onPlayerNameUpdate)
 				socketClient.socket.off(SOCKET_EVENT.PLAYER_SCORE_UPDATED, onPlayerScoreUpdate)
 				socketClient.socket.off(SOCKET_EVENT.PLAYER_ROOM_ORDER, onPlayerRoomOrder)
+				socketClient.socket.off(SOCKET_EVENT.NODE_CONNECTED, onNodeConnected)
 
 				dispatch(disconnectFromSocket())
 			}
@@ -165,6 +181,8 @@ function GameScreen() {
 					<CountdownPopup count={countdown}/>
 				) : status == GAME_STATUS.SUSPENDED ? (
 					<SuspensionPopup reason="Your opponent disconnected"/>
+				) : status == GAME_STATUS.FINISHED ? (
+					<FinishPopup winner={scoreboard[1].name} reason=""/>
 				) : <></>
 			}
 
@@ -186,6 +204,7 @@ function GameScreen() {
 					isConnected={socketError.current.length == 0}
 					ownOrder={ownOrder}
 					onWidth={setScoreboardWidth}
+					onNodeClick={handleNodeClick}
 				/>
 
 				<div className={`w-[${scoreboardWidth}] font-crossedout text-2xl text-center py-4`}>

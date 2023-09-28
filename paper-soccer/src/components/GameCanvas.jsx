@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
-import { clearColor, findNodeByPoint, hexToRgb, isNeighbour, withinCircle } from "../canvas/utils"
-import { setNodes } from "../state/slices/gameSlice"
-import { GAME_STATUS } from "../constants"
+import { clearColor, findNodeByGridLocation, findNodeByPoint, hexToRgb, isNeighbour, withinCircle } from "../canvas/utils"
+import { setNodes, setStatus } from "../state/slices/gameSlice"
+import { GAME_STATUS, PITCH_INFO } from "../constants"
 
 
 const [wInSquares, hInSquares] = [12, 8]
 
-function GameCanvas({ isLoading, isConnected, ownOrder, onWidth }) {
-    const [events, setEvents] = useState([])
+function GameCanvas({ isLoading, isConnected, ownOrder, onWidth, onNodeClick }) {
+    //const [events, setEvents] = useState([])
     const [hoveredNode, setHoveredNode] = useState(0)
 
     const theme = useSelector(state => state.theme)
@@ -35,7 +35,78 @@ function GameCanvas({ isLoading, isConnected, ownOrder, onWidth }) {
     const width = useMemo(() => gridSquareSize * wInSquares + borderWidth, [gridSquareSize, borderWidth])
     const height = useMemo(() => gridSquareSize * hInSquares + borderWidth, [gridSquareSize, borderWidth])
 
-    
+    /**
+     * Check if moving to node is possible
+     * 
+     * Client-side version of the isValidMove function on the server-side
+     */
+    const isValidMove = useCallback(
+    /**
+     * @param {import("../canvas/utils").PitchNode} node Clicked node object
+     * @returns {boolean}
+     */
+    (node) => {
+        // 1. Check if node is within range constraints
+        if (node.point < 0 || node.point > PITCH_INFO.NODE_COUNT - 1) {
+            return false
+        }
+
+        // 2. Check if this player is the active player
+        if (activePlayer != ownOrder) {
+            return false
+        }
+
+        // 3. Check if node is neighboring the ball node
+        if (!isNeighbour(nodes, ballPosition, node.point)) {
+            return false
+        }
+
+        // 4. Check if node is in a direct relation with the ball node
+        const destNode = history[node.point]
+        if (destNode && destNode.some(rel => rel.point == ballPosition)) {
+            return false
+        }
+
+        // 5. Check if destination node (this node) can be passed through (has 6 relations at most)
+        if (destNode && destNode.length > 6) {
+            return false
+        }
+
+        // 6. If ball node is on border, only allow diagonal clicks
+        const ballNode = findNodeByPoint(nodes, ballPosition)
+        if (ballNode.placement == "border" && !isNeighbour(nodes, ballPosition, node.point, true)) {
+            return false
+        }
+
+        return true
+    }, [nodes, activePlayer, ballPosition, ownOrder, history])
+
+    const canMove = useCallback(
+    /**
+     * @param {import("../canvas/utils").PitchNode} originPoint Point for node whose neighbors to check
+     * @returns {boolean}
+     */
+    (originPoint) => {
+        const originNode = findNodeByPoint(originPoint)
+        const { x: ox, y: oy } = originNode.gridLocation
+        let canMove = false
+
+        for (let i = oy - 1; i <= oy + 1; i++) {
+            for (let j = ox - 1; j <= ox + 1; j++) {
+                if (i == oy && j == ox) continue
+
+                const node = findNodeByGridLocation(nodes, j, i)
+
+                if (node && isValidMove(node)) {
+                    canMove = true
+                    break
+                }
+            }
+        }
+
+        return canMove
+    }, [nodes, isValidMove])
+
     const drawPreviewLine = useCallback(() => {
         if (nodes.length == 0 || !ctx) return
         if (hoveredNode == ballPosition) return
@@ -57,73 +128,77 @@ function GameCanvas({ isLoading, isConnected, ownOrder, onWidth }) {
         }
     }, [hoveredNode, ballPosition, blueTeamColor, redTeamColor, ctx])
 
-    const CLICK_EVENT = useCallback(e => {
-        const x = e.pageX - e.currentTarget.offsetLeft;
-        const y = e.pageY - e.currentTarget.offsetTop;
+    // Register click event for nodes and update on state change
+    useEffect(() => {
+        if (status == GAME_STATUS.ONGOING && nodes.length > 0) {
+            const handleClick = e => {
+                const x = e.pageX - e.currentTarget.offsetLeft;
+                const y = e.pageY - e.currentTarget.offsetTop;
 
-        for (const node of nodes) {
-            if (withinCircle(x, y, node.absLocation.x, node.absLocation.y, nodeRadius) 
-                && node.point != ballPosition
-                && activePlayer == ownOrder
-            ) {
-                if(!isNeighbour(nodes, ballPosition, node.point)) return
-                
-                console.log("clicked node", node); // TODO debug
+                for (const node of nodes) {
+                    if (withinCircle(x, y, node.absLocation.x, node.absLocation.y, nodeRadius) && isValidMove(node)) {
+                        // if (
+                        //     node.point != ballPosition
+                        //     && activePlayer == ownOrder
+                        //     && isNeighbour(nodes, ballPosition, node.point)
+                        // ) {
+                            onNodeClick(node)
+                        // }
+                    }
+                }
+            }
+
+            const cleanupRef = canvasElement.current
+    
+            canvasElement.current.addEventListener("click", handleClick)
+    
+            return () => {
+                cleanupRef.removeEventListener("click", handleClick)
             }
         }
-    }, [nodes, nodeRadius, ballPosition, activePlayer, ownOrder])
+    }, [nodes, nodeRadius, ballPosition, activePlayer, ownOrder, onNodeClick, status, isValidMove])
 
-    const HOVER_EVENT = useCallback(e => {
-        const x = e.pageX - e.currentTarget.offsetLeft;
-        const y = e.pageY - e.currentTarget.offsetTop;
+    // Register hover event for nodes and update on state change
+    useEffect(() => {
+        if (status == GAME_STATUS.ONGOING && nodes.length > 0) {
+            const handleHover = e => {
+                const x = e.pageX - e.currentTarget.offsetLeft;
+                const y = e.pageY - e.currentTarget.offsetTop;
 
-        let found = false;
+                let found = false;
 
-        for (const node of nodes) {
-            if (withinCircle(x, y, node.absLocation.x, node.absLocation.y, nodeRadius) 
-                && node.point != ballPosition
-                && activePlayer == ownOrder
-            ) {
-                if (!isNeighbour(nodes, ballPosition, node.point)) break
+                for (const node of nodes) {
+                    if (withinCircle(x, y, node.absLocation.x, node.absLocation.y, nodeRadius)) {
+                        if (isValidMove(node)) {
+                            setHoveredNode(node.point)
+                            canvasElement.current.classList.add("cursor-pointer")
+                        } else {
+                            setHoveredNode(-1)
+                            canvasElement.current.classList.add("cursor-not-allowed")
+                        }
 
-                canvasElement.current.classList.add("cursor-pointer")
-                found = true
+                        found = true
+                        break
+                    }
+                }
 
-                setHoveredNode(node.point)
-                break
+                if (!found) {
+                    canvasElement.current.classList.remove("cursor-pointer")
+                    canvasElement.current.classList.remove("cursor-not-allowed")
+                }
+            }
+
+            const cleanupRef = canvasElement.current
+
+            canvasElement.current.addEventListener("mousemove", handleHover)
+
+            return () => {
+                cleanupRef.removeEventListener("mousemove", handleHover)
             }
         }
+    }, [status, nodes, nodeRadius, activePlayer, ownOrder, ballPosition, isValidMove])
 
-        if (!found) canvasElement.current.classList.remove("cursor-pointer")
-    }, [nodes, nodeRadius, activePlayer, ownOrder, ballPosition])
-
-    const registerNodeEvents = useCallback(() => {
-        setEvents(prev => {
-            if(prev.length == 0) {
-                canvasElement.current.addEventListener("click", CLICK_EVENT)
-                canvasElement.current.addEventListener("mousemove", HOVER_EVENT)
-
-                return [
-                    { type: "click", value: CLICK_EVENT },
-                    { type: "mousemove", value: HOVER_EVENT }
-                ]
-            }
-
-            return prev
-        })
-    }, [CLICK_EVENT, HOVER_EVENT])
-
-    const unregisterNodeEvents = () => {
-        setEvents(prev => {
-            if(prev.length > 0) {
-                for (const event of events) canvasElement.current.removeEventListener(event.type, event.value)
-                return []
-            }
-
-            return prev
-        })
-    }
-
+    // Create object representations for each pitch node
     const createNodeListState = useCallback(() => {
         const nodeList = []
         let index = 0;
@@ -166,6 +241,7 @@ function GameCanvas({ isLoading, isConnected, ownOrder, onWidth }) {
         return nodeList
     }, [gridSquareSize, nodeRadius])
 
+    // Add colored lines to represent the team colors to both goalposts
     const drawGoalpostDetails = useCallback(() => {
         ctx.beginPath()
         ctx.strokeStyle = "#ff7f7f"
@@ -240,8 +316,8 @@ function GameCanvas({ isLoading, isConnected, ownOrder, onWidth }) {
         ctx.fill()
     }, [ctx, ballColor, ballRadius])
 
+    // Draw player moves (history) from Redux state
     const drawHistory = useCallback((ballLocation) => {
-        // Draw player moves (history)
         ctx.lineWidth = 3
 
         for (const [point, relations] of Object.entries(history)) {
@@ -263,9 +339,12 @@ function GameCanvas({ isLoading, isConnected, ownOrder, onWidth }) {
         drawBall(ballLocation)
     }, [ctx, history, nodes, redTeamColor, blueTeamColor, drawBall])
 
+    // Stop game if active player cannot make any more moves
     useEffect(() => {
-        onWidth(width)
-    }, [width])
+        if (!canMove(ballPosition)) {
+            dispatch(setStatus(GAME_STATUS.FINISHED))
+        }
+    }, [canMove, ballPosition])
 
     // Fetch canvas context when page is successfully loaded
     useEffect(() => {
@@ -290,12 +369,10 @@ function GameCanvas({ isLoading, isConnected, ownOrder, onWidth }) {
         }
     }, [ctx, width, height, drawGoalpostDetails, drawPitchBorder, drawGridLines, drawGoalpostOpenings, drawPreviewLine, hoveredNode])
 
-    // Reset nodes and their events on ratio change (screen resize)
+    // Notify parent component of the width change
     useEffect(() => {
-        const nodeList = createNodeListState()
-        unregisterNodeEvents()
-        dispatch(setNodes(nodeList))
-    }, [ratio, createNodeListState])
+        onWidth(width)
+    }, [width])
 
     // Draw match history from state
     useEffect(() => {
@@ -304,16 +381,11 @@ function GameCanvas({ isLoading, isConnected, ownOrder, onWidth }) {
         }
     }, [ctx, nodes, ballPosition, drawHistory, hoveredNode])
 
-    // Disable events if the game didn't start
+    // Reset nodes on ratio change (screen resize)
     useEffect(() => {
-        switch (status) {
-            case GAME_STATUS.ONGOING:
-                if (nodes.length > 0) registerNodeEvents()
-                break
-            default:
-                unregisterNodeEvents()
-        }
-    }, [status, nodes])
+        const nodeList = createNodeListState()
+        dispatch(setNodes(nodeList))
+    }, [ratio, createNodeListState])
 
     return (
         <canvas ref={canvasElement} width={width} height={height} className="mt-6"></canvas>

@@ -15,12 +15,19 @@ router.get("/:id", (req, res) => {
     const pageSize = Math.max(1, Math.min(size, process.env.SQL_SELECTION_LIMIT))
     const toSkip = Math.max(0, (page - 1) * pageSize)
 
-    const nodeId = parseInt(req.params.id)
-    const { point } = req.query
+    const point = parseInt(req.params.id)
+    let { stateId } = req.query
+
+    if(!stateId) {
+        res.status(400).json(CRUD.ERROR("Missing query parameter: stateId"))
+        return
+    }
+
+    stateId = parseInt(stateId)
 
     query(async (prisma) => {
-        const node = await prisma.pitchnode.findUnique({
-            where: { id: nodeId }
+        const node = await prisma.pitchnode.findFirst({
+            where: { stateId, point }
         })
 
         if (node == null) {
@@ -31,7 +38,7 @@ router.get("/:id", (req, res) => {
         const rels = await prisma.pitchnoderelation.findMany({
             skip: toSkip,
             take: pageSize,
-            where: { nodeId: node.id, point }
+            where: { nodeId: node.id }
         })
 
         if(rels.length == 0) {

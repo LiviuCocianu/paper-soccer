@@ -4,9 +4,10 @@ import { query } from "../prisma/client.js"
 import { createServer } from "http"
 import { Server } from "socket.io"
 
-import { onDisconnect } from "./listeners.js"
+import { onDisconnect, onNodeClicked } from "./listeners.js"
 import { GamestateEmitter, PlayerEmitter } from "./emitters.js"
 import { GAME_STATUS } from "../constants.js"
+import { isValidMove } from "../game/utils.js"
 
 const server = createServer(app)
 const port = process.env.SERVER_PORT || 8080
@@ -126,7 +127,7 @@ io.on("connection", (socket) => {
                 const countdown = setInterval(async () => {
                     const roomWithState = await prisma.room.findUnique({
                         where: { inviteCode },
-                        select: { id: true, gamestate: true }
+                        include: { gamestate: true }
                     })
 
                     // Cancel countdown if status changes while counting
@@ -148,7 +149,11 @@ io.on("connection", (socket) => {
                             data: { status: GAME_STATUS.ONGOING }
                         })
 
-                        if (!statusUpdated) return
+                        const ballNode = await prisma.pitchnode.create({
+                            data: { stateId: roomWithState.gamestate.id, point: roomWithState.gamestate.ballPosition }
+                        })
+
+                        if (!statusUpdated || !ballNode) return
 
                         // Tell the client the game started
                         GamestateEmitter.emitStatusUpdated(inviteCode, GAME_STATUS.ONGOING)
@@ -166,4 +171,5 @@ io.on("connection", (socket) => {
 
     // Socket events
     onDisconnect(socket)
+    onNodeClicked(socket)
 })

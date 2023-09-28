@@ -18,9 +18,16 @@ export const SOCKET_EVENT = {
     PLAYER_SCORE_UPDATED: "player:score:updated",
     PLAYER_ROOM_ORDER: "player:room_order",
     GAMESTATE_STATUS_UPDATED: "gamestate:status:updated",
-    GAMESTATE_COUNTDOWN_UPDATED: "gamestate:countdown:updated"
+    GAMESTATE_COUNTDOWN_UPDATED: "gamestate:countdown:updated",
+    NODE_CLICKED: "node:clicked",
+    NODE_CONNECTED: "node:connected"
+}
+
+export const PITCH_INFO = {
+    NODE_COUNT: 105
 }
 
 Object.freeze(GAME_STATUS)
 Object.freeze(GAME_MODE)
 Object.freeze(SOCKET_EVENT)
+Object.freeze(PITCH_INFO)

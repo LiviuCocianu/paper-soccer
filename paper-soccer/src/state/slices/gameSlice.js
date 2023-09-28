@@ -55,10 +55,6 @@ export const gameSlice = createSlice({
             state.ballPosition = val
             return state
         },
-        setHistory: (state, action) => {
-            state.history = action.payload
-            return state
-        },
         setCountdown: (state, action) => {
             const val = Math.max(0, action.payload)
             state.countdown = val
@@ -67,9 +63,35 @@ export const gameSlice = createSlice({
         resetGameState: (state) => {
             state = initialState
             return state
+        },
+        setHistory: (state, action) => {
+            state.history = action.payload
+            return state
+        },
+        addHistoryMove: (state, action) => {
+            const { point, player } = action.payload
+
+            if(!point || !player) return state
+            if(player < 1 || player > 2) return state
+
+            // Add point - ballPosition relation
+            if (!state.history[point]) {
+                state.history[point] = []
+            }
+            
+            state.history[point].push({ point: state.ballPosition, player })
+
+            // Add ballPosition - point relation
+            if (!state.history[state.ballPosition]) {
+                state.history[state.ballPosition] = []
+            }
+            
+            state.history[state.ballPosition].push({ point, player })
+
+            return state
         }
     }
 })
 
-export const { setClientUsername, setNodes, setActivePlayer, setStatus, setScoreFor, setBallPosition, setHistory, setCountdown, resetGameState } = gameSlice.actions
+export const { setClientUsername, setNodes, setActivePlayer, setStatus, setScoreFor, setBallPosition, setHistory, setCountdown, resetGameState, addHistoryMove } = gameSlice.actions
 export default gameSlice.reducer

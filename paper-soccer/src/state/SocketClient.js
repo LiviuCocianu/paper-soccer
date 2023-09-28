@@ -1,6 +1,9 @@
-import { io } from 'socket.io-client';
+import { Socket, io } from 'socket.io-client';
 
 class SocketClient {
+    /**
+     * @type {Socket}
+     */
     socket;
 
     connect(room, username) {

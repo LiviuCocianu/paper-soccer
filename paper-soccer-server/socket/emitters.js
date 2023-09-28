@@ -38,7 +38,6 @@ export const GamestateEmitter = {
     /**
      * Emit on changes in the game state status of a room
      * 
-     * @param {Server<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap, any>} socket
      * @param {string} inviteCode
      * @param {"WAITING"|"STARTING"|"ONGOING"|"FINISHED"|"SUSPENDED"|"REDUNDANT"} status 
      * @param {function} ack
@@ -47,10 +46,18 @@ export const GamestateEmitter = {
     /**
      * Emit on changes in the game state countdown of a room
      * 
-     * @param {Server<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap, any>} socket 
      * @param {string} inviteCode
      * @param {number} value
      * @param {function} ack
      */
-    emitCountdownUpdated: (inviteCode, value, ack = undefined) => { io.to(inviteCode).emit(SOCKET_EVENT.GAMESTATE_COUNTDOWN_UPDATED, value, ack) }
+    emitCountdownUpdated: (inviteCode, value, ack = undefined) => { io.to(inviteCode).emit(SOCKET_EVENT.GAMESTATE_COUNTDOWN_UPDATED, value, ack) },
+    /**
+     * Emit when node at point connects with the ball node
+     * 
+     * @param {string} inviteCode
+     * @param {number} point
+     * @param {number} player
+     * @param {boolean} bounceable
+     */
+    emitNodeConnected: (inviteCode, point, player, bounceable) => { io.to(inviteCode).emit(SOCKET_EVENT.NODE_CONNECTED, point, player, bounceable) }
 }
