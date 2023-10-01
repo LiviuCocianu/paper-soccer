@@ -9,3 +9,7 @@ export async function fetchRequest(endpoint, type="GET", body={}) {
         body: type == "POST" || type == "PATCH" ? JSON.stringify(body) : undefined
     })
 }
+
+export function decodeQueryParam(p) {
+    return decodeURIComponent(p.replace(/\+/g, " "));
+}

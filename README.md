@@ -6,7 +6,13 @@
 I chose to pursue this project when I was playing some online social games with my friends (Skribbl, UNO, Haxball) and remembered this one pen-and-paper game I'd play in school during breaks: paper soccer. Upon research, I couldn't find many implementations of this idea online and I wanted a "paper soccer" app that would allow users to quickly create a match, play and move on, no bothersome authentication required. It's quite a niche and fun game, but at the same time it's easy to implement and perfect to practice my programming skills on, hence another reason why I pursued this project
 
 ## Gameplay
-A dot (ball) will spawn in the middle of the pitch at the start of the game. In order to move the ball, players have to draw a 1-square long line per turn, straight or diagonal, relative to the ball. Players can get additional moves in one turn by "bouncing" the ball on the endpoints of lines created by previous moves or on the boundaries of the pitch. There are two game-ending conditions: one player moves the ball inside the opponent's goalpost and wins OR the ball is moved in a position that doesn't allow any more moves (this will be considered a loss for the player that moved the ball)
+A dot (ball) will spawn in the middle of the pitch at the start of the game. In order to move the ball, players have to draw a 1-square long line per turn, straight or diagonal, relative to the ball. Players can get additional moves in one turn by "bouncing" the ball on the endpoints of lines created by previous moves or on the boundaries of the pitch. 
+
+The game will end if any of the following occur:
+- **Score a goal:** one player moves the ball inside the opponent's goalpost and wins
+- **Score an own goal:** one player moves the ball inside their own goalpost, causing them to lose
+- **Get the ball stuck:** the ball is moved in a position that doesn't allow for any more moves, like a corner or running out of points around the ball to move towards (this will be considered a loss for the player that moved the ball)
+- **Block the goalpost:** the access to one of the goalposts got blocked like [this](https://upload.wikimedia.org/wikipedia/commons/thumb/5/5d/Pi%C5%82karzyki_blokada_bramki.svg/800px-Pi%C5%82karzyki_blokada_bramki.svg.png); this event is very rare, but the app handles this case too
 
 ## Mechanics 
 - The pitch will be 8x10 with 2x1 goalposts 

@@ -2,7 +2,7 @@ import { createSlice } from "@reduxjs/toolkit"
 import { GAME_STATUS } from "../../constants"
 
 const initialState = {
-    clientUsername: "Player", 
+    clientUsername: "", 
     nodes: [],
     activePlayer: 1,
     status: GAME_STATUS.WAITING,

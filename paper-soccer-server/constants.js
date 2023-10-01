@@ -24,7 +24,10 @@ export const SOCKET_EVENT = {
 }
 
 export const PITCH_INFO = {
-    NODE_COUNT: 105
+    NODE_COUNT: 105,
+    RED_GOAL_NODES: [33, 46, 59],
+    BLUE_GOAL_NODES: [45, 58, 71],
+    CORNERS: [0, 10, 94, 104]
 }
 
 Object.freeze(GAME_STATUS)

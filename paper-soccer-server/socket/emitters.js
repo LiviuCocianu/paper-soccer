@@ -55,9 +55,12 @@ export const GamestateEmitter = {
      * Emit when node at point connects with the ball node
      * 
      * @param {string} inviteCode
-     * @param {number} point
-     * @param {number} player
-     * @param {boolean} bounceable
+     * @param {object} data
+     * @param {number} data.point
+     * @param {number} data.player
+     * @param {boolean} data.bounceable
+     * @param {boolean} data.canMove
+     * @param {number} data.activePlayer
      */
-    emitNodeConnected: (inviteCode, point, player, bounceable) => { io.to(inviteCode).emit(SOCKET_EVENT.NODE_CONNECTED, point, player, bounceable) }
+    emitNodeConnected: (inviteCode, data) => { io.to(inviteCode).emit(SOCKET_EVENT.NODE_CONNECTED, data) }
 }

@@ -7,7 +7,6 @@ import { Server } from "socket.io"
 import { onDisconnect, onNodeClicked } from "./listeners.js"
 import { GamestateEmitter, PlayerEmitter } from "./emitters.js"
 import { GAME_STATUS } from "../constants.js"
-import { isValidMove } from "../game/utils.js"
 
 const server = createServer(app)
 const port = process.env.SERVER_PORT || 8080
@@ -74,7 +73,7 @@ io.on("connection", (socket) => {
             data: {
                 id: socket.id,
                 invitedTo: inviteCode,
-                username: username.length == 0 ? "Player" : username,
+                username: username.length == 0 ? `Player ${playerCount + 1}` : username,
                 roomOrder: playerCount + 1
             }
         })

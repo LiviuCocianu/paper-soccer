@@ -1,5 +1,5 @@
 import { GAME_STATUS, SOCKET_EVENT } from "../constants.js";
-import { isValidMove } from "../game/utils.js";
+import { canMove, getGoalpostAtBall, isGoalpostBlocked, isValidMove } from "../game/utils.js";
 import { query } from "../prisma/client.js";
 import { GamestateEmitter } from "./emitters.js";
 
@@ -102,28 +102,63 @@ export function onNodeClicked(socket) {
                 await prisma.pitchnoderelation.create({
                     data: { nodeId: clickedNode.id, point: ballNode.point, creator: roomOrderNumber }
                 })
-
-                // Change the position of the ball to the clicked node
-                const updated = await prisma.room.update({
-                    where: { inviteCode },
-                    data: {
-                        gamestate: {
-                            update: { ballPosition: node.point }
-                        }
-                    }
-                })
-
+                
                 const bounceable = node.placement == "border" || clickedRelationsCount > 0
+                const canMoveBall = await canMove(inviteCode, roomOrderNumber, node.point)
+                const inGoalpost = getGoalpostAtBall(node.point)
+                const selfGoal = inGoalpost == roomOrderNumber
+                const redBlocked = await isGoalpostBlocked(room.gamestate.id)
+                const blueBlocked = await isGoalpostBlocked(room.gamestate.id, false)
 
-                if(!bounceable) {
-                    await prisma.gamestate.update({
-                        where: { id: room.gamestate.id },
-                        data: { activePlayer: roomOrderNumber == 1 ? 2 : 1 }
-                    })
+                // If the active player got the ball stuck or scored a goal in their own goalpost, they lose
+                let winner = (!canMoveBall && !inGoalpost) || selfGoal
+                    ? (roomOrderNumber == 1 ? 2 : 1) 
+                    : roomOrderNumber
+                
+                let updateData = { ballPosition: node.point }
+
+                if (!bounceable) {
+                    updateData.activePlayer = roomOrderNumber == 1 ? 2 : 1
+                    winner = redBlocked ? 1 : (blueBlocked ? 2 : winner)
                 }
 
-                if (updated != null)
-                    GamestateEmitter.emitNodeConnected(inviteCode, node.point, roomOrderNumber, bounceable)
+                GamestateEmitter.emitNodeConnected(inviteCode, {
+                    point: node.point,
+                    player: roomOrderNumber,
+                    bounceable,
+                    canMove: canMoveBall,
+                    inGoalpost,
+                    selfGoal,
+                    redBlocked,
+                    blueBlocked,
+                    winner
+                })
+
+                if (!canMoveBall || inGoalpost || (!bounceable && redBlocked)) {
+                    updateData.status = GAME_STATUS.FINISHED
+                    GamestateEmitter.emitStatusUpdated(inviteCode, GAME_STATUS.FINISHED)
+
+                    if(inGoalpost) {
+                        console.log("");
+
+                        if(selfGoal) {
+                            console.log(`Room (INVITE=${inviteCode}) was finished: ${roomOrderNumber == 1 ? "red" : "blue"} scored an own goal`);
+                        } else {
+                            console.log(`Room (INVITE=${inviteCode}) was finished: ${winner == 1 ? "red" : "blue"} team won`);
+                        }
+                    } else if (!bounceable && (redBlocked || blueBlocked)) {
+                        console.log("");
+                        console.log(`Room (INVITE=${inviteCode}) was finished: ${redBlocked ? "red" : "blue"} goalpost got blocked`);
+                    } else if (!canMoveBall) {
+                        console.log("");
+                        console.log(`Room (INVITE=${inviteCode}) was finished: ${roomOrderNumber == 1 ? "red" : "blue"} got the ball stuck`);
+                    }
+                }
+
+                await prisma.gamestate.update({
+                    where: { id: room.gamestate.id },
+                    data: updateData
+                })
             }, (e) => console.log(e))
         }
     }

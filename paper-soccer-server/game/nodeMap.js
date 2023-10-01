@@ -1,3 +1,10 @@
+import { ServerPitchNode } from "../factory.js";
+
+/**
+ * @param {number} wInSquares 
+ * @param {number} hInSquares 
+ * @returns {ServerPitchNode[]}
+ */
 function generateNodes(wInSquares, hInSquares) {
     const nodeList = []
     let index = 0;
@@ -15,19 +22,11 @@ function generateNodes(wInSquares, hInSquares) {
                 (i > 0 && i < hInSquares) &&
                 ((j > 1 && j < wInSquares - 1) || ((i == (hInSquares / 2) && (j > 0 && j < wInSquares))))
             ) {
-                nodeList.push({
-                    point: index++,
-                    gridLocation: { x: j, y: i },
-                    placement: "inside"
-                })
+                nodeList.push(ServerPitchNode(index++, "inside", { x: j, y: i }))
             }
             // Node on the border
             else {
-                nodeList.push({
-                    point: index++,
-                    gridLocation: { x: j, y: i },
-                    placement: "border"
-                })
+                nodeList.push(ServerPitchNode(index++, "border", { x: j, y: i }))
             }
         }
     }

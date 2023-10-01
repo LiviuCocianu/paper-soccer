@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
-import { clearColor, findNodeByGridLocation, findNodeByPoint, hexToRgb, isNeighbour, withinCircle } from "../canvas/utils"
-import { setNodes, setStatus } from "../state/slices/gameSlice"
+import { clearColor, findNodeByPoint, hexToRgb, isNeighbour, withinCircle } from "../canvas/utils"
+import { setNodes } from "../state/slices/gameSlice"
 import { GAME_STATUS, PITCH_INFO } from "../constants"
 
 
@@ -80,32 +80,6 @@ function GameCanvas({ isLoading, isConnected, ownOrder, onWidth, onNodeClick }) 
 
         return true
     }, [nodes, activePlayer, ballPosition, ownOrder, history])
-
-    const canMove = useCallback(
-    /**
-     * @param {import("../canvas/utils").PitchNode} originPoint Point for node whose neighbors to check
-     * @returns {boolean}
-     */
-    (originPoint) => {
-        const originNode = findNodeByPoint(originPoint)
-        const { x: ox, y: oy } = originNode.gridLocation
-        let canMove = false
-
-        for (let i = oy - 1; i <= oy + 1; i++) {
-            for (let j = ox - 1; j <= ox + 1; j++) {
-                if (i == oy && j == ox) continue
-
-                const node = findNodeByGridLocation(nodes, j, i)
-
-                if (node && isValidMove(node)) {
-                    canMove = true
-                    break
-                }
-            }
-        }
-
-        return canMove
-    }, [nodes, isValidMove])
 
     const drawPreviewLine = useCallback(() => {
         if (nodes.length == 0 || !ctx) return
@@ -338,13 +312,6 @@ function GameCanvas({ isLoading, isConnected, ownOrder, onWidth, onNodeClick }) 
 
         drawBall(ballLocation)
     }, [ctx, history, nodes, redTeamColor, blueTeamColor, drawBall])
-
-    // Stop game if active player cannot make any more moves
-    useEffect(() => {
-        if (!canMove(ballPosition)) {
-            dispatch(setStatus(GAME_STATUS.FINISHED))
-        }
-    }, [canMove, ballPosition])
 
     // Fetch canvas context when page is successfully loaded
     useEffect(() => {
