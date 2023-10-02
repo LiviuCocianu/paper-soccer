@@ -65,7 +65,6 @@ enum gamestate_status {
   ONGOING
   FINISHED
   SUSPENDED
-  REDUNDANT
 }
 
 enum gamestate_mode {

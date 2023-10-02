@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react"
+import { useState } from "react"
 import InputField from "../InputField"
 import NameField from "../NameField"
 import SubmitButton from "../SubmitButton"

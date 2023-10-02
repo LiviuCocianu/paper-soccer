@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
 import { useParams, useSearchParams } from "react-router-dom"
-import { addHistoryMove, resetGameState, setActivePlayer, setBallPosition, setClientUsername, setCountdown, setStatus } from "../state/slices/gameSlice"
-import { GAME_STATUS, SOCKET_EVENT } from "../constants"
+import { addHistoryMove, resetGameState, setActivePlayer, setBallPosition, setClientUsername, setCountdown, setGameMode, setHistory, setStatus } from "../state/slices/gameSlice"
+import { GAME_MODE, GAME_STATUS, SOCKET_EVENT } from "../constants"
 
 import WaitingPopup from "../components/popups/WaitingPopup"
 import CountdownPopup from "../components/popups/CountdownPopup"
@@ -22,39 +22,45 @@ function GameScreen() {
 	const { id: inviteCode } = useParams()
 	const [ queryParams ] = useSearchParams()
 	const [isLoading, toggleLoading] = useState(true)
-	const [ownOrder, setOwnOrder] = useState(1)
 	const [finishMessage, setFinishMessage] = useState("")
+
+	const ownOrderRef = useRef(1)
+	const modeRef = useRef(GAME_MODE.CLASSIC)
+	const statusRef = useRef(GAME_STATUS.WAITING)
 
 	const [scoreboardWidth, setScoreboardWidth] = useState(0)
 	const scoreboardIndicatorLeft = useMemo(() => {
-		return ownOrder == 1 ? (<span className="text-xl font-heycomic">(you)</span>) : ""
-	}, [ownOrder])
+		return ownOrderRef.current == 1 ? (<span className="text-xl font-heycomic">(you)</span>) : ""
+	}, [ownOrderRef])
 	const scoreboardIndicatorRight = useMemo(() => {
-		return ownOrder == 2 ? (<span className="text-xl font-heycomic">(you)</span>) : ""
-	}, [ownOrder])
+		return ownOrderRef.current == 2 ? (<span className="text-xl font-heycomic">(you)</span>) : ""
+	}, [ownOrderRef])
 
 	const scoreboardRef = useRef({
 		1: { name: "Player 1", score: 0 },
 		2: { name: "Player 2", score: 0 }
 	})
 
-	const statusRef = useRef(GAME_STATUS.WAITING)
-
 	// Web socket state
 	const socketError = useRef("")
 
 	// Redux state
-	const { clientUsername, activePlayer, status, countdown } = useSelector(state => state.game)
+	const { clientUsername, activePlayer, mode, status, countdown } = useSelector(state => state.game)
 	const dispatch = useDispatch()
 
 	const handleNodeClick = useCallback((node) => {
-		socketClient.socket.emit(SOCKET_EVENT.NODE_CLICKED, inviteCode, ownOrder, node)
-	}, [inviteCode, ownOrder])
+		socketClient.socket.emit(SOCKET_EVENT.NODE_CLICKED, inviteCode, ownOrderRef.current, node)
+	}, [inviteCode, ownOrderRef])
 
 	// Disconnect on socket error
 	useEffect(() => {
 		dispatch(disconnectFromSocket())
 	}, [socketError.current])
+
+	// Change game mode ref to use in socket events without the need of state listening
+	useEffect(() => {
+		modeRef.current = mode
+	}, [mode])
 
 	// Change status ref to use in socket events without the need of state listening
 	useEffect(() => {
@@ -63,8 +69,8 @@ function GameScreen() {
 
 	// Change the scoreboard name on username change
 	useEffect(() => {
-		scoreboardRef.current[ownOrder].name = clientUsername
-	}, [clientUsername, ownOrder])
+		scoreboardRef.current[ownOrderRef.current].name = clientUsername
+	}, [clientUsername, ownOrderRef])
 
 	// Setup: Handle socket connect/disconnect
 	useEffect(() => {
@@ -90,6 +96,10 @@ function GameScreen() {
 				socketError.current = res.message
 		}
 
+		const onBallPositionUpdate = (ballPosFromSocket) => {
+			dispatch(setBallPosition(ballPosFromSocket))
+		}
+
 		const onStatusUpdate = async (statusFromSocket, ack) => {
 			if (statusRef.current == GAME_STATUS.FINISHED) return
 			dispatch(setStatus(statusFromSocket))
@@ -103,6 +113,10 @@ function GameScreen() {
 
 		const onPlayerNameUpdate = (orderNoFromSocket, nameFromSocket) => {
 			scoreboardRef.current[orderNoFromSocket].name = nameFromSocket
+
+			if (orderNoFromSocket != ownOrderRef.current) {
+				document.title = "Paper Soccer - Multiplayer VS " + nameFromSocket
+			}
 		}
 
 		const onPlayerScoreUpdate = (orderNoFromSocket, scoreFromSocket) => {
@@ -110,12 +124,11 @@ function GameScreen() {
 		}
 
 		const onPlayerRoomOrder = (orderNoFromSocket) => {
-			setOwnOrder(orderNoFromSocket)
+			ownOrderRef.current = orderNoFromSocket
 		}
 
 		const onNodeConnected = ({point, player, bounceable, canMove, inGoalpost, selfGoal, redBlocked, blueBlocked, winner}) => {
 			dispatch(addHistoryMove({ point, player }))
-			dispatch(setBallPosition(point))
 
 			if(!canMove || inGoalpost) {
 				// Active player = winner
@@ -128,7 +141,12 @@ function GameScreen() {
 				}
 
 				if(inGoalpost) {
-					setFinishMessage(`Scored a goal for the ${inGoalpost == 1 ? "blue" : "red"} team!`)
+					if(modeRef.current == GAME_MODE.BESTOF3) {
+						dispatch(setHistory({}))
+						setFinishMessage(`${winner == 1 ? "Red" : "Blue"} team scored the most goals!`)
+					} else if (modeRef.current == GAME_MODE.CLASSIC) {
+						setFinishMessage(`Scored a goal for the ${inGoalpost == 1 ? "blue" : "red"} team!`)
+					}
 					return
 				}
 
@@ -162,9 +180,16 @@ function GameScreen() {
 						if(players.status == 200) {
 							const body = await players.json()
 							playerCount = body.result.length
+							
+							if(playerCount == 1) {
+								const opponent = body.result.find(pl => pl.roomOrder == 1)
+								document.title = "Paper Soccer - Multiplayer VS " + opponent.username
+							}
 						}
 
 						const order = playerCount != undefined ? playerCount + 1 : ""
+
+						const stateBody = await fetchRequest("/api/gameStates/" + inviteCode).then(res => res.json())
 
 						// 'clientUsername' is the given username in the "join a room" form, IF given
 						const username = queryParams.has("username") 
@@ -174,12 +199,14 @@ function GameScreen() {
 						// Now connect with the processed username
 						dispatch(connectToSocket({ room: inviteCode, username }))
 						dispatch(setClientUsername(username))
+						dispatch(setGameMode(stateBody.result.mode))
 
 						socketClient.socket.on("connect", onConnect)
 						socketClient.socket.on("disconnect", onConnectError)
 						socketClient.socket.on("connect_error", onConnectError)
 						socketClient.socket.on(SOCKET_EVENT.DATABASE_ERROR, onDatabaseError)
 						socketClient.socket.on(SOCKET_EVENT.PLAYER_ERROR, onPlayerError)
+						socketClient.socket.on(SOCKET_EVENT.GAMESTATE_BALL_POSITION_UPDATED, onBallPositionUpdate)
 						socketClient.socket.on(SOCKET_EVENT.GAMESTATE_STATUS_UPDATED, onStatusUpdate)
 						socketClient.socket.on(SOCKET_EVENT.GAMESTATE_COUNTDOWN_UPDATED, onCountdownUpdate)
 						socketClient.socket.on(SOCKET_EVENT.PLAYER_NAME_UPDATED, onPlayerNameUpdate)
@@ -203,6 +230,7 @@ function GameScreen() {
 				socketClient.socket.off("connect_error", onConnectError)
 				socketClient.socket.off(SOCKET_EVENT.DATABASE_ERROR, onDatabaseError)
 				socketClient.socket.off(SOCKET_EVENT.PLAYER_ERROR, onPlayerError)
+				socketClient.socket.off(SOCKET_EVENT.GAMESTATE_BALL_POSITION_UPDATED, onBallPositionUpdate)
 				socketClient.socket.off(SOCKET_EVENT.GAMESTATE_STATUS_UPDATED, onStatusUpdate)
 				socketClient.socket.off(SOCKET_EVENT.GAMESTATE_COUNTDOWN_UPDATED, onCountdownUpdate)
 				socketClient.socket.off(SOCKET_EVENT.PLAYER_NAME_UPDATED, onPlayerNameUpdate)
@@ -251,7 +279,7 @@ function GameScreen() {
 				<GameCanvas 
 					isLoading={isLoading} 
 					isConnected={socketError.current.length == 0}
-					ownOrder={ownOrder}
+					ownOrder={ownOrderRef.current}
 					onWidth={setScoreboardWidth}
 					onNodeClick={handleNodeClick}
 				/>
@@ -259,7 +287,7 @@ function GameScreen() {
 				<div className="py-4 text-2xl text-center truncate font-crossedout" style={{ width: scoreboardWidth }}>
 					{
 						status == GAME_STATUS.ONGOING ? (
-							activePlayer == ownOrder ? "It's your turn!" : `Wait for ${scoreboardRef.current[ownOrder == 1 ? 2 : 1].name}'s turn!`
+							activePlayer == ownOrderRef.current ? "It's your turn!" : `Wait for ${scoreboardRef.current[ownOrderRef.current == 1 ? 2 : 1].name}'s turn!`
 						) : <></>
 					}
 				</div>

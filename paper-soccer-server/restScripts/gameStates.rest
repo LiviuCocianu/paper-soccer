@@ -1,12 +1,12 @@
-GET http://localhost:3000/api/gameState/
+GET http://localhost:3000/api/gameStates/
 
 ###
 
-GET http://localhost:3000/api/gameState/xf5bHSy7
+GET http://localhost:3000/api/gameStates/65iqdaDM
 
 ###
 
-PATCH http://localhost:3000/api/gameState/xf5bHSy7
+PATCH http://localhost:3000/api/gameStates/xf5bHSy7
 Content-Type: application/json
 
 {
@@ -15,4 +15,4 @@ Content-Type: application/json
 
 ###
 
-DELETE http://localhost:3000/api/gameState/
+DELETE http://localhost:3000/api/gameStates/

@@ -1,6 +1,11 @@
+import { useEffect } from "react"
 import { Link } from "react-router-dom"
 
 function HomeScreen() {
+	useEffect(() => {
+		document.title = "Play \"Paper Soccer\""
+	}, [])
+
 	return (
 		<div className="flex items-center justify-center w-full h-full animate-fadingIn">
 			<div className="flex flex-col space-y-6 select-none dark:text-dark">

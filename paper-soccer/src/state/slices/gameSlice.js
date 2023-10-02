@@ -1,10 +1,11 @@
 import { createSlice } from "@reduxjs/toolkit"
-import { GAME_STATUS } from "../../constants"
+import { GAME_MODE, GAME_STATUS } from "../../constants"
 
 const initialState = {
     clientUsername: "", 
     nodes: [],
     activePlayer: 1,
+    mode: GAME_MODE.CLASSIC,
     status: GAME_STATUS.WAITING,
     scores: [0, 0],
     ballPosition: 52,
@@ -36,6 +37,11 @@ export const gameSlice = createSlice({
         setActivePlayer: (state, action) => {
             const val = Math.max(1, Math.min(2, action.payload))
             state.activePlayer = val
+            return state
+        },
+        setGameMode: (state, action) => {
+            const val = !Object.keys(GAME_MODE).includes(action.payload) ? initialState.mode : action.payload
+            state.mode = val
             return state
         },
         setStatus: (state, action) => {
@@ -93,5 +99,18 @@ export const gameSlice = createSlice({
     }
 })
 
-export const { setClientUsername, setNodes, setActivePlayer, setStatus, setScoreFor, setBallPosition, setHistory, setCountdown, resetGameState, addHistoryMove } = gameSlice.actions
+export const { 
+    setClientUsername, 
+    setNodes, 
+    setActivePlayer, 
+    setGameMode, 
+    setStatus, 
+    setScoreFor, 
+    setBallPosition, 
+    setHistory, 
+    setCountdown, 
+    resetGameState, 
+    addHistoryMove 
+} = gameSlice.actions
+
 export default gameSlice.reducer

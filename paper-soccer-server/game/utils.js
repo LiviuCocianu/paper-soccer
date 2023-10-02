@@ -11,11 +11,11 @@ import nodes from "./nodeMap.js";
  * @param {PitchNode} node Node object to move towards
  * @returns {Promise<boolean>} Validity of the move
  */
-export async function isValidMove(inviteCode, roomOrderNumber, node) {
+export async function isValidMove(inviteCode, roomOrderNumber, ballPosition, node) {
     let isValid = true
 
     await query(async (prisma) => {
-        const room = await prisma.room.findUnique({
+        const room = await prisma.room.findFirst({
             where: { inviteCode },
             include: { gamestate: { include: { nodes: { include: { relations: true } } } } }
         })
@@ -33,14 +33,13 @@ export async function isValidMove(inviteCode, roomOrderNumber, node) {
         }
 
         // 3. Check if node is neighboring the ball node
-        if (!isNeighbour(room.gamestate.ballPosition, node.point)) {
+        if (!isNeighbour(ballPosition, node.point)) {
             isValid = false
             return
         }
-
         
         // 4. Check if node is in a direct relation with the ball node
-        const ballNodeDb = room.gamestate.nodes.find(n => n.point == room.gamestate.ballPosition)
+        const ballNodeDb = room.gamestate.nodes.find(n => n.point == ballPosition)
         if (ballNodeDb && ballNodeDb.relations.some(rel => rel.point == node.point)) {
             isValid = false
             return
@@ -54,8 +53,8 @@ export async function isValidMove(inviteCode, roomOrderNumber, node) {
         }
         
         // 6. If ball node is on border, only allow diagonal clicks
-        const ballNode = findNodeByPoint(room.gamestate.ballPosition)
-        if (ballNode.placement == "border" && !isNeighbour(room.gamestate.ballPosition, node.point, true)) {
+        const ballNode = findNodeByPoint(ballPosition)
+        if (ballNode.placement == "border" && !isNeighbour(ballPosition, node.point, true)) {
             isValid = false
             return
         }
@@ -91,15 +90,14 @@ export function isNeighbour(originPoint, point, diagonalsOnly=false) {
     const { x: ox, y: oy } = originNode.gridLocation
     let isNeighbour = false
 
-    for (let i = oy - 1; i <= oy + 1; diagonalsOnly ? i += 2 : i++) {
+    main: for (let i = oy - 1; i <= oy + 1; diagonalsOnly ? i += 2 : i++) {
         for (let j = ox - 1; j <= ox + 1; diagonalsOnly ? j += 2 : j++) {
-
             if (i == oy && j == ox) continue
 
             // Check if point is at one of the neighboring nodes of origin point
             if (node.gridLocation.x == j && node.gridLocation.y == i) {
                 isNeighbour = true
-                break
+                break main
             }
         }
     }
@@ -124,17 +122,17 @@ export async function canMove(inviteCode, roomOrderNumber, originPoint) {
 
     const { x: ox, y: oy } = originNode.gridLocation
     let canMove = false
-
+    
     main: for (let i = oy - 1; i <= oy + 1; i++) {
         for (let j = ox - 1; j <= ox + 1; j++) {
             if (i == oy && j == ox) continue
 
             const node = findNodeByGridLocation(j, i)
-
-            if(!node) continue
-
-            const isValid = await isValidMove(inviteCode, roomOrderNumber, node)
             
+            if(!node) continue
+            
+            const isValid = await isValidMove(inviteCode, roomOrderNumber, originPoint, node)
+
             if (isValid && !isInCorner(originPoint)) {
                 canMove = true
                 break main

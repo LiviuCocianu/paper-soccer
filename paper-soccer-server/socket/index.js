@@ -12,7 +12,10 @@ const server = createServer(app)
 const port = process.env.SERVER_PORT || 8080
 
 server.listen(port, () => {
-    console.log(`Listening on port ${port}`);
+    console.log("");
+    console.log("  Paper Soccer server is up and ready! Welcome! 😊");
+    console.log(`  (( listening on port ${port} ))`);
+    console.log("");
 })
 
 const io = new Server(server, {
@@ -35,7 +38,7 @@ query(async (prisma) => {
         await prisma.room.deleteMany({})
         console.log("Wiped previous data from database!")
     }
-}, (e) => console.warn("Couldn't connect to database!"))
+}, () => console.warn("Couldn't connect to database!"))
 
 // Attach event listeners to sockets
 io.on("connection", (socket) => {
@@ -59,9 +62,9 @@ io.on("connection", (socket) => {
             return
         }
 
-        const room = await prisma.room.findUnique({
+        const room = await prisma.room.findFirst({
             where: { inviteCode },
-            select: { gamestate: true }
+            include: { gamestate: true }
         })
 
         if (room != null && room.gamestate.status != GAME_STATUS.WAITING) {
@@ -86,7 +89,7 @@ io.on("connection", (socket) => {
         socket.join(inviteCode)
 
         console.log("");
-        console.log(`Player (NAME=${player.username}, ID=${socket.id}) joined a room (INVITE=${player.invitedTo})`);
+        console.log(`Player (NAME=${player.username}, ID=${socket.id}) joined a room (INVITE=${player.invitedTo}, MODE=${room.gamestate.mode})`);
 
         PlayerEmitter.emitRoomOrder(socket, player.roomOrder)
 
@@ -121,7 +124,7 @@ io.on("connection", (socket) => {
                 let counter = 5
 
                 console.log("");
-                console.log(`Room (INVITE=${inviteCode}) is about to start a game!`);
+                console.log(`Room (INVITE=${inviteCode}, MODE=${room.gamestate.mode}) is about to start a game!`);
 
                 const countdown = setInterval(async () => {
                     const roomWithState = await prisma.room.findUnique({
@@ -158,7 +161,7 @@ io.on("connection", (socket) => {
                         GamestateEmitter.emitStatusUpdated(inviteCode, GAME_STATUS.ONGOING)
 
                         console.log("");
-                        console.log(`Room (INVITE=${inviteCode}) started the game!`);
+                        console.log(`Room (INVITE=${inviteCode}, MODE=${room.gamestate.mode}) started the game!`);
                     }
                 }, 1000)
             })

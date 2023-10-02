@@ -36,10 +36,17 @@ export const PlayerEmitter = {
 
 export const GamestateEmitter = {
     /**
+     * Emit on changes in the game state ball position of a room
+     * 
+     * @param {string} inviteCode
+     * @param {number} ballPosition
+     */
+    emitBallPositionUpdated: (inviteCode, ballPosition) => { io.to(inviteCode).emit(SOCKET_EVENT.GAMESTATE_BALL_POSITION_UPDATED, ballPosition) },
+    /**
      * Emit on changes in the game state status of a room
      * 
      * @param {string} inviteCode
-     * @param {"WAITING"|"STARTING"|"ONGOING"|"FINISHED"|"SUSPENDED"|"REDUNDANT"} status 
+     * @param {"WAITING"|"STARTING"|"ONGOING"|"FINISHED"|"SUSPENDED"} status 
      * @param {function} ack
      */
     emitStatusUpdated: (inviteCode, status, ack = undefined) => { io.to(inviteCode).emit(SOCKET_EVENT.GAMESTATE_STATUS_UPDATED, status, ack) },

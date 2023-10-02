@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import CreateRoomForm from "../components/multiplayer/CreateRoomForm"
 import JoinRoomForm from "../components/multiplayer/JoinRoomForm"
 import ErrorPage from "../screens/error/ErrorPage";
@@ -6,6 +6,10 @@ import ErrorPage from "../screens/error/ErrorPage";
 function MultiplayerScreen() {
 	const [createForm, toggleForm] = useState(true);
 	const [errorMessage, setErrorMessage] = useState("")
+
+	useEffect(() => {
+		document.title = "Paper Soccer - Multiplayer"
+	}, [])
 
 	const changeForm = () => {
 		toggleForm(!createForm)

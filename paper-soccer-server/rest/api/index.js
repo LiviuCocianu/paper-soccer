@@ -9,7 +9,7 @@ import players from "./players.js"
 const router = express.Router()
 
 router.use("/rooms", rooms)
-router.use("/gameState", gameState)
+router.use("/gameStates", gameState)
 router.use("/nodes", nodes)
 router.use("/nodeRelations", nodeRelations)
 router.use("/players", players)

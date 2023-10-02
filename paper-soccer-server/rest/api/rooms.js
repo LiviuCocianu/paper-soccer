@@ -31,10 +31,10 @@ router.get("/:id", (req, res) => {
 
 // Create
 router.post("/", async (req, res) => {
-    const { mode=GAME_MODE.CLASSIC } = req.body;
+    const { gameMode=GAME_MODE.CLASSIC } = req.body;
     const inviteCode = codeGenerator.generate()[0]
 
-    if(!Object.keys(GAME_MODE).includes(mode)) {
+    if (!Object.keys(GAME_MODE).includes(gameMode)) {
         res.status(500).json(CRUD.ERROR(`Invalid game mode value! Valid options: ${Object.keys(GAME_MODE).join(", ")}`))
         return
     }
@@ -44,7 +44,7 @@ router.post("/", async (req, res) => {
             data: {
                 inviteCode,
                 gamestate: {
-                    create: { mode }
+                    create: { mode: gameMode }
                 }
             }
         })
