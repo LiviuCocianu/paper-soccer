@@ -1,40 +1,39 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
 import { useParams, useSearchParams } from "react-router-dom"
-import { addHistoryMove, resetGameState, setActivePlayer, setBallPosition, setClientUsername, setCountdown, setGameMode, setHistory, setStatus } from "../state/slices/gameSlice"
+import { addHistoryMove, resetGameState, setActivePlayer, setBallPosition, setClientUsername, setCountdown, setGameMode, setHistory, setStatus, setWon } from "../state/slices/gameSlice"
 import { GAME_MODE, GAME_STATUS, SOCKET_EVENT } from "../constants"
+import { Howl } from 'howler';
 
-import WaitingPopup from "../components/popups/WaitingPopup"
-import CountdownPopup from "../components/popups/CountdownPopup"
 import LoadingScreen from "./LoadingScreen"
-import ErrorPage from "../screens/error/ErrorPage"
-import SuspensionPopup from "../components/popups/SuspensionPopup"
-import GameCanvas from "../components/GameCanvas"
+import ErrorPage from "./error/ErrorPage"
+import GameScreenLayout from "../components/GameScreenLayout"
 
 import { decodeQueryParam, fetchRequest } from "../utils"
 import { connectToSocket, disconnectFromSocket } from "../state/slices/socketSlice"
 import { socketClient } from "../main"
-import FinishPopup from "../components/popups/FinishPopup"
 
 
-function GameScreen() {
+function OnlineGameScreen() {
 	// Own state
 	const { id: inviteCode } = useParams()
 	const [ queryParams ] = useSearchParams()
 	const [isLoading, toggleLoading] = useState(true)
 	const [finishMessage, setFinishMessage] = useState("")
 
+	const winSound = useMemo(() => new Howl({
+		src: ['../sounds/win.mp3'],
+		volume: 0.5
+	}), [])
+
+	const loseSound = useMemo(() => new Howl({
+		src: ['../sounds/lose.mp3'],
+		volume: 0.5
+	}), [])
+
 	const ownOrderRef = useRef(1)
 	const modeRef = useRef(GAME_MODE.CLASSIC)
 	const statusRef = useRef(GAME_STATUS.WAITING)
-
-	const [scoreboardWidth, setScoreboardWidth] = useState(0)
-	const scoreboardIndicatorLeft = useMemo(() => {
-		return ownOrderRef.current == 1 ? (<span className="text-xl font-heycomic">(you)</span>) : ""
-	}, [ownOrderRef])
-	const scoreboardIndicatorRight = useMemo(() => {
-		return ownOrderRef.current == 2 ? (<span className="text-xl font-heycomic">(you)</span>) : ""
-	}, [ownOrderRef])
 
 	const scoreboardRef = useRef({
 		1: { name: "Player 1", score: 0 },
@@ -45,7 +44,7 @@ function GameScreen() {
 	const socketError = useRef("")
 
 	// Redux state
-	const { clientUsername, activePlayer, mode, status, countdown } = useSelector(state => state.game)
+	const { clientUsername, mode, status, won } = useSelector(state => state.game)
 	const dispatch = useDispatch()
 
 	const handleNodeClick = useCallback((node) => {
@@ -129,6 +128,7 @@ function GameScreen() {
 
 		const onNodeConnected = ({point, player, bounceable, canMove, inGoalpost, selfGoal, redBlocked, blueBlocked, winner}) => {
 			dispatch(addHistoryMove({ point, player }))
+			dispatch(setWon(winner == ownOrderRef.current))
 
 			if(!canMove || inGoalpost) {
 				// Active player = winner
@@ -245,55 +245,29 @@ function GameScreen() {
 		}
 	}, [])
 
+	useEffect(() => {
+		if(status == GAME_STATUS.FINISHED || status == GAME_STATUS.SUSPENDED) {
+			if(won) winSound.play()
+			else loseSound.play()
+		}
+	}, [status, won, loseSound, winSound])
+
 	if(socketError.current.length > 0) return <ErrorPage message={socketError.current}/>
 
 	if (isLoading) return <LoadingScreen />
 
 	return (
-		<div className="flex flex-col items-center justify-center w-full h-full space-y-10 select-none dark:text-dark">
-			{
-				status == GAME_STATUS.WAITING ? (
-					<WaitingPopup inviteCode={inviteCode}/>
-				) : status == GAME_STATUS.STARTING ? (
-					<CountdownPopup count={countdown}/>
-				) : status == GAME_STATUS.SUSPENDED ? (
-					<SuspensionPopup reason="Your opponent disconnected"/>
-				) : status == GAME_STATUS.FINISHED ? (
-					<FinishPopup winner={scoreboardRef.current[activePlayer].name} reason={finishMessage}/>
-				) : <></>
-			}
-
-			<div style={{ width: scoreboardWidth }}>
-				<div className="flex justify-between w-full font-strokedim">
-					<div>
-						<h1 className="text-3xl">{scoreboardRef.current[1].name} {scoreboardIndicatorLeft}</h1>
-						<h2 className="text-xl">Score: {scoreboardRef.current[1].score}</h2>
-					</div>
-
-					<div className="flex flex-col items-end">
-						<h1 className="text-3xl">{scoreboardIndicatorRight} {scoreboardRef.current[2].name}</h1>
-						<h2 className="text-xl">Score: {scoreboardRef.current[2].score}</h2>
-					</div>
-				</div>
-
-				<GameCanvas 
-					isLoading={isLoading} 
-					isConnected={socketError.current.length == 0}
-					ownOrder={ownOrderRef.current}
-					onWidth={setScoreboardWidth}
-					onNodeClick={handleNodeClick}
-				/>
-
-				<div className="py-4 text-2xl text-center truncate font-crossedout" style={{ width: scoreboardWidth }}>
-					{
-						status == GAME_STATUS.ONGOING ? (
-							activePlayer == ownOrderRef.current ? "It's your turn!" : `Wait for ${scoreboardRef.current[ownOrderRef.current == 1 ? 2 : 1].name}'s turn!`
-						) : <></>
-					}
-				</div>
-			</div>
-		</div>
+		<GameScreenLayout 
+			multiplayer
+			inviteCode={inviteCode}
+			order={ownOrderRef.current}
+			isLoading={isLoading}
+			isConnected={socketError.current.length == 0}
+			scoreboard={scoreboardRef.current}
+			onNodeClick={handleNodeClick}
+			finishMessage={finishMessage}
+		/>
 	)
 }
 
-export default GameScreen
+export default OnlineGameScreen

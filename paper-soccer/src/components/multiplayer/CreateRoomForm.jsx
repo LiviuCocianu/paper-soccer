@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import TickIcon from "../../assets/icons/TickIcon";
 import SubmitButton from "../SubmitButton";
 import NameField from "../NameField";
@@ -7,6 +7,8 @@ import { useNavigate } from "react-router-dom";
 import { fetchRequest } from "../../utils";
 import { useDispatch } from "react-redux";
 import { setClientUsername } from "../../state/slices/gameSlice";
+import { Howl } from 'howler';
+
 
 function CreateRoomForm({ errorHandler }) {
 	const [gameMode, setGamemode] = useState(GAME_MODE.CLASSIC);
@@ -15,9 +17,21 @@ function CreateRoomForm({ errorHandler }) {
 	const dispatch = useDispatch()
 	const navigate = useNavigate()
 
+	const radioButtonSound = useMemo(() => new Howl({
+		src: ['./sounds/radio_button.mp3'],
+		volume: 0.5
+	}), [])
+
+	const buttonSound = useMemo(() => new Howl({
+		src: ['./sounds/button.mp3'],
+		volume: 0.5
+	}), [])
+
 	const selectGamemode = (e) => {
-		const gm = e.currentTarget.dataset.gamemode;
+		const gm = e.currentTarget.dataset.gamemode
 		if(gm) setGamemode(gm)
+
+		radioButtonSound.play()
 	}
 
 	const changeUsername = (e) => setUsername(e.target.value)
@@ -25,6 +39,8 @@ function CreateRoomForm({ errorHandler }) {
 	const sendForm = async () => {
 		if(!submitDisabled) {
 			setSubmitDisabled(true)
+
+			buttonSound.play()
 
 			await fetchRequest("/api/rooms/", "POST", { gameMode } )
 				.then(res => res.json())

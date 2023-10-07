@@ -2,38 +2,25 @@ import { createSlice } from "@reduxjs/toolkit"
 import { GAME_MODE, GAME_STATUS } from "../../constants"
 
 const initialState = {
-    clientUsername: "", 
-    nodes: [],
+    // Client & server state
     activePlayer: 1,
     mode: GAME_MODE.CLASSIC,
     status: GAME_STATUS.WAITING,
-    scores: [0, 0],
     ballPosition: 52,
-    history: {},
-    countdown: 5
+    // Client only state
+    clientUsername: "",
+    countdown: 5,
+    nodes: [],
+    history: {52: []},
+    // Singleplayer only state
+    won: false, // false for bot, true for player
 }
-
-// Example of history object; TODO remove this on production release
-/*
-{
-    52: [{ point: 51, player: 1 }],
-    51: [{ point: 52, player: 1 }, { point: 39, player: 2 }],
-    39: [{ point: 51, player: 2 }]
-}
-*/
 
 export const gameSlice = createSlice({
     name: "game",
     initialState,
     reducers: {
-        setClientUsername: (state, action) => {
-            state.clientUsername = action.payload.slice(0, 16)
-            return state
-        },
-        setNodes: (state, action) => {
-            state.nodes = action.payload
-            return state
-        },
+        // Client & server actions
         setActivePlayer: (state, action) => {
             const val = Math.max(1, Math.min(2, action.payload))
             state.activePlayer = val
@@ -49,16 +36,14 @@ export const gameSlice = createSlice({
             state.status = val
             return state
         },
-        setScoreFor: (state, action) => {
-            let { player=1, value=0 } = action.payload
-            player = Math.max(1, Math.min(2, player))
-            value = Math.max(0, Math.min(3, value))
-            state.scores[player - 1] = value
-            return state
-        },
         setBallPosition: (state, action) => {
             const val = Math.max(0, Math.min(state.nodes.length - 1, action.payload))
             state.ballPosition = val
+            return state
+        },
+        // Client only actions
+        setClientUsername: (state, action) => {
+            state.clientUsername = action.payload.slice(0, 16)
             return state
         },
         setCountdown: (state, action) => {
@@ -66,8 +51,8 @@ export const gameSlice = createSlice({
             state.countdown = val
             return state
         },
-        resetGameState: (state) => {
-            state = initialState
+        setNodes: (state, action) => {
+            state.nodes = action.payload
             return state
         },
         setHistory: (state, action) => {
@@ -93,24 +78,61 @@ export const gameSlice = createSlice({
             }
             
             state.history[state.ballPosition].push({ point, player })
+            
+            return state
+        },
+        // Singleplayer only state
+        setWon: (state, action) => {
+            state.won = action.payload
+            return state
+        },
+        connectNodes: (state, action) => {
+            const { from, to, creator } = action.payload
+
+            if (!from || !to || !creator) return state
+            if (creator < 1 || creator > 2) return state
+
+            // Add from - to relation
+            if (!state.history[from]) {
+                state.history[from] = []
+            }
+
+            state.history[from].push({ point: to, player: creator })
+
+            // Add to - from relation
+            if (!state.history[to]) {
+                state.history[to] = []
+            }
+
+            state.history[to].push({ point: from, player: creator })
 
             return state
-        }
+        },
+        // Reset action
+        resetGameState: (state) => {
+            state = initialState
+            return state
+        },
     }
 })
 
 export const { 
-    setClientUsername, 
-    setNodes, 
+    // Client & server actions
     setActivePlayer, 
     setGameMode, 
-    setStatus, 
-    setScoreFor, 
+    setStatus,
     setBallPosition, 
-    setHistory, 
-    setCountdown, 
-    resetGameState, 
-    addHistoryMove 
+    // Client only actions
+    setClientUsername,
+    setCountdown,
+    setNodes,
+    setHistory,
+    addHistoryMove,
+    // Singleplayer only state
+    connectNodes,
+    setWon,
+    // Reset action
+    resetGameState,
 } = gameSlice.actions
 
 export default gameSlice.reducer

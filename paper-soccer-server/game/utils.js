@@ -84,11 +84,21 @@ export function findNodeByGridLocation(x, y) {
     return nodes.find(node => node.gridLocation.x == x && node.gridLocation.y == y)
 }
 
+/**
+ * Check if point is neighbouring the origin point
+ * 
+ * @param {number} originPoint Point to check neighbours for
+ * @param {number} point Point that is supposed to be neighbouring the origin
+ * @param {boolean} [diagonalsOnly] If true, only check neighbours diagonally. Value is false by default
+ * @returns {boolean}
+ */
 export function isNeighbour(originPoint, point, diagonalsOnly=false) {
     const originNode = findNodeByPoint(originPoint)
     const node = findNodeByPoint(point)
     const { x: ox, y: oy } = originNode.gridLocation
     let isNeighbour = false
+
+    if (!originNode || !node) return false
 
     main: for (let i = oy - 1; i <= oy + 1; diagonalsOnly ? i += 2 : i++) {
         for (let j = ox - 1; j <= ox + 1; diagonalsOnly ? j += 2 : j++) {
@@ -115,6 +125,14 @@ function isInCorner(point) {
     return PITCH_INFO.CORNERS.includes(point)
 }
 
+/**
+ * Check if there are any available nodes to move towards from the origin
+ * 
+ * @param {string} inviteCode Invite code for the room this is taking place in
+ * @param {number} roomOrderNumber Number corresponding to the player that is moving
+ * @param {number} originPoint Origin point to check
+ * @returns {boolean}
+ */
 export async function canMove(inviteCode, roomOrderNumber, originPoint) {
     const originNode = findNodeByPoint(originPoint)
 
@@ -180,7 +198,7 @@ async function haveRelation(prisma, stateId, first, second) {
  * https://en.wikipedia.org/wiki/Paper_soccer#/media/File:Pi%C5%82karzyki_blokada_bramki.svg
  * 
  * @param {number} stateId ID of the game state to check
- * @param {boolean} red True for checking the red team goalpost, false for blue team
+ * @param {boolean} [red] True for checking the red team goalpost, false for blue team. Value is true by default
  * 
  * @returns {Promise<boolean>}
  */

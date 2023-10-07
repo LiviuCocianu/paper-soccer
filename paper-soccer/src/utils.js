@@ -13,3 +13,9 @@ export async function fetchRequest(endpoint, type="GET", body={}) {
 export function decodeQueryParam(p) {
     return decodeURIComponent(p.replace(/\+/g, " "));
 }
+
+export function flipPlayer(n) {
+    return n == 1 ? 2 : 1
+}
+
+export const snooze = (delay) => new Promise((resolve) => setTimeout(resolve, delay))

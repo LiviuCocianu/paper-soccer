@@ -1,19 +1,25 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
-import { clearColor, findNodeByPoint, hexToRgb, isNeighbour, withinCircle } from "../canvas/utils"
+import { clearColor, hexToRgb, withinCircle } from "../canvas/utils"
+import { findNodeByPoint, isNeighbour } from "../nodeUtils"
 import { setNodes } from "../state/slices/gameSlice"
 import { GAME_STATUS, PITCH_INFO } from "../constants"
+import { Howl } from 'howler'
 
 
 const [wInSquares, hInSquares] = [12, 8]
 
-function GameCanvas({ isLoading, isConnected, ownOrder, onWidth, onNodeClick }) {
-    //const [events, setEvents] = useState([])
+function GameCanvas({ isLoading=false, isConnected=true, ownOrder=1, onWidth, onNodeClick }) {
     const [hoveredNode, setHoveredNode] = useState(0)
 
     const theme = useSelector(state => state.theme)
     const { nodes, activePlayer, status, ballPosition, history } = useSelector(state => state.game)
     const dispatch = useDispatch()
+
+    const invalidSound = useMemo(() => new Howl({
+        src: ['../sounds/invalid_move.mp3'],
+        volume: 0.5
+    }), [])
 
     // Theme colors for game interface
     const borderStrokeColor = useMemo(() => theme == "light" ? "black" : "#d9deff", [theme])
@@ -110,14 +116,12 @@ function GameCanvas({ isLoading, isConnected, ownOrder, onWidth, onNodeClick }) 
                 const y = e.pageY - e.currentTarget.offsetTop;
 
                 for (const node of nodes) {
-                    if (withinCircle(x, y, node.absLocation.x, node.absLocation.y, nodeRadius) && isValidMove(node)) {
-                        // if (
-                        //     node.point != ballPosition
-                        //     && activePlayer == ownOrder
-                        //     && isNeighbour(nodes, ballPosition, node.point)
-                        // ) {
-                            onNodeClick(node)
-                        // }
+                    if (withinCircle(x, y, node.absLocation.x, node.absLocation.y, nodeRadius)) {
+                        if (isValidMove(node)) {
+                            if(onNodeClick) onNodeClick(node)
+                        } else {
+                            invalidSound.play()
+                        }
                     }
                 }
             }
@@ -338,7 +342,7 @@ function GameCanvas({ isLoading, isConnected, ownOrder, onWidth, onNodeClick }) 
 
     // Notify parent component of the width change
     useEffect(() => {
-        onWidth(width)
+        if(onWidth) onWidth(width)
     }, [width])
 
     // Draw match history from state
