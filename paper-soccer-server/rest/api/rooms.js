@@ -31,7 +31,7 @@ router.get("/:id", (req, res) => {
 
 // Create
 router.post("/", async (req, res) => {
-    const { gameMode=GAME_MODE.CLASSIC } = req.body;
+    const { gameMode=GAME_MODE.CLASSIC } = req.body
     const inviteCode = codeGenerator.generate()[0]
 
     if (!Object.keys(GAME_MODE).includes(gameMode)) {

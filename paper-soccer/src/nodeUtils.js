@@ -87,7 +87,7 @@ export function isValidMove(nodes, node, gameState) {
 
     // 6. If ball attempts to go out of bounds to the corner of a goalpost
     if (
-        (gameState.ballPosition == 72 && node.point == 59) || 
+        (gameState.ballPosition == 72 && node.point == 59) ||
         (gameState.ballPosition == 22 && node.point == 33) ||
         (gameState.ballPosition == 82 && node.point == 71) ||
         (gameState.ballPosition == 32 && node.point == 45)
@@ -106,7 +106,7 @@ export function isValidMove(nodes, node, gameState) {
  * 
  * @returns {boolean}
  */
-export function isNeighbour(nodes, originPoint, point, diagonalsOnly=false) {
+export function isNeighbour(nodes, originPoint, point, diagonalsOnly = false) {
     const originNode = findNodeByPoint(nodes, originPoint)
     const node = findNodeByPoint(nodes, point)
 
@@ -259,7 +259,7 @@ export function isGoalpostBlocked(nodes, history, red = true) {
         if (!haveRelation(history, first, second)) return false
     }
 
-    return true;
+    return true
 }
 
 /**
@@ -270,12 +270,12 @@ export function isGoalpostBlocked(nodes, history, red = true) {
  * 
  * @returns {number} Distance in grid squares. Can be a float
  */
-export function getDistance(nodes, node, red=true) {
+export function getDistance(nodes, node, red = true) {
     const goalpostPoint = red ? PITCH_INFO.RED_GOAL_NODES[0] : PITCH_INFO.BLUE_GOAL_NODES[0]
     const goalpostNode = findNodeByPoint(nodes, goalpostPoint)
 
-    const {x: nx, y: ny} = node.gridLocation
-    const {x: gx, y: gy} = goalpostNode.gridLocation
+    const { x: nx, y: ny } = node.gridLocation
+    const { x: gx, y: gy } = goalpostNode.gridLocation
 
     const distX = Math.max(nx, gx) - Math.min(nx, gx)
     const distY = Math.max(ny, gy) - Math.min(ny, gy)

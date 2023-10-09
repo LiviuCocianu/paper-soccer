@@ -1,19 +1,14 @@
-import { useEffect, useMemo } from "react"
+import { useEffect } from "react"
 import { Link } from "react-router-dom"
-import { Howl } from 'howler'
+import sounds from "../sounds.js"
 
 function HomeScreen() {
 	useEffect(() => {
 		document.title = "Play \"Paper Soccer\""
 	}, [])
 
-	const buttonSound = useMemo(() => new Howl({
-		src: ['./sounds/button.mp3'],
-		volume: 0.5
-	}), [])
-
 	const handleButtonClick = () => {
-		buttonSound.play()
+		sounds.buttonSound.play()
 	}
 
 	return (

@@ -42,7 +42,7 @@ router.get("/:id", (req, res) => {
 // Create
 router.post("/:id", async (req, res) => {
     const inviteCode = req.params.id
-    const { point } = req.body;
+    const { point } = req.body
 
     if(point == undefined) {
         res.status(500).json(CRUD.ERROR("No point specified in request body!"))

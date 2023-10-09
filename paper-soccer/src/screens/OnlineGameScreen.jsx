@@ -1,9 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
 import { useParams, useSearchParams } from "react-router-dom"
 import { addHistoryMove, resetGameState, setActivePlayer, setBallPosition, setClientUsername, setCountdown, setGameMode, setHistory, setStatus, setWon } from "../state/slices/gameSlice"
 import { GAME_MODE, GAME_STATUS, SOCKET_EVENT } from "../constants"
-import { Howl } from 'howler';
 
 import LoadingScreen from "./LoadingScreen"
 import ErrorPage from "./error/ErrorPage"
@@ -12,6 +11,7 @@ import GameScreenLayout from "../components/GameScreenLayout"
 import { decodeQueryParam, fetchRequest } from "../utils"
 import { connectToSocket, disconnectFromSocket } from "../state/slices/socketSlice"
 import { socketClient } from "../main"
+import sounds from "../sounds"
 
 
 function OnlineGameScreen() {
@@ -20,16 +20,6 @@ function OnlineGameScreen() {
 	const [ queryParams ] = useSearchParams()
 	const [isLoading, toggleLoading] = useState(true)
 	const [finishMessage, setFinishMessage] = useState("")
-
-	const winSound = useMemo(() => new Howl({
-		src: ['../sounds/win.mp3'],
-		volume: 0.5
-	}), [])
-
-	const loseSound = useMemo(() => new Howl({
-		src: ['../sounds/lose.mp3'],
-		volume: 0.5
-	}), [])
 
 	const ownOrderRef = useRef(1)
 	const modeRef = useRef(GAME_MODE.CLASSIC)
@@ -53,7 +43,8 @@ function OnlineGameScreen() {
 
 	// Disconnect on socket error
 	useEffect(() => {
-		dispatch(disconnectFromSocket())
+		if(socketError.current.length > 0)
+			dispatch(disconnectFromSocket())
 	}, [socketError.current])
 
 	// Change game mode ref to use in socket events without the need of state listening
@@ -77,10 +68,14 @@ function OnlineGameScreen() {
 			toggleLoading(false)
 		}
 
-		const onConnectError = () => {
+		const onDisconnect = () => {
 			dispatch(resetGameState())
 			if (socketError.current.length == 0)
 				socketError.current = "We have encountered a connection problem on our side. Please try again later"
+		}
+
+		const onConnectError = () => {
+			onDisconnect()
 		}
 
 		const onDatabaseError = () => {
@@ -202,7 +197,7 @@ function OnlineGameScreen() {
 						dispatch(setGameMode(stateBody.result.mode))
 
 						socketClient.socket.on("connect", onConnect)
-						socketClient.socket.on("disconnect", onConnectError)
+						socketClient.socket.on("disconnect", onDisconnect)
 						socketClient.socket.on("connect_error", onConnectError)
 						socketClient.socket.on(SOCKET_EVENT.DATABASE_ERROR, onDatabaseError)
 						socketClient.socket.on(SOCKET_EVENT.PLAYER_ERROR, onPlayerError)
@@ -227,6 +222,7 @@ function OnlineGameScreen() {
 			// Disconnect if server didn't cut the connection already
 			if(socketClient.socket) {
 				socketClient.socket.off("connect", onConnect)
+				socketClient.socket.off("disconnect", onDisconnect)
 				socketClient.socket.off("connect_error", onConnectError)
 				socketClient.socket.off(SOCKET_EVENT.DATABASE_ERROR, onDatabaseError)
 				socketClient.socket.off(SOCKET_EVENT.PLAYER_ERROR, onPlayerError)
@@ -247,12 +243,12 @@ function OnlineGameScreen() {
 
 	useEffect(() => {
 		if(status == GAME_STATUS.FINISHED || status == GAME_STATUS.SUSPENDED) {
-			if(won) winSound.play()
-			else loseSound.play()
+			if (won) sounds.winSound.play()
+			else sounds.loseSound.play()
 		}
-	}, [status, won, loseSound, winSound])
+	}, [status, won, sounds.loseSound, sounds.winSound])
 
-	if(socketError.current.length > 0) return <ErrorPage message={socketError.current}/>
+	//if (socketError.current.length > 0) return <ErrorPage message={socketError.current}/>
 
 	if (isLoading) return <LoadingScreen />
 

@@ -4,7 +4,7 @@ import { clearColor, hexToRgb, withinCircle } from "../canvas/utils"
 import { findNodeByPoint, isNeighbour } from "../nodeUtils"
 import { setNodes } from "../state/slices/gameSlice"
 import { GAME_STATUS, PITCH_INFO } from "../constants"
-import { Howl } from 'howler'
+import sounds from "../sounds"
 
 
 const [wInSquares, hInSquares] = [12, 8]
@@ -15,11 +15,6 @@ function GameCanvas({ isLoading=false, isConnected=true, ownOrder=1, onWidth, on
     const theme = useSelector(state => state.theme)
     const { nodes, activePlayer, status, ballPosition, history } = useSelector(state => state.game)
     const dispatch = useDispatch()
-
-    const invalidSound = useMemo(() => new Howl({
-        src: ['../sounds/invalid_move.mp3'],
-        volume: 0.5
-    }), [])
 
     // Theme colors for game interface
     const borderStrokeColor = useMemo(() => theme == "light" ? "black" : "#d9deff", [theme])
@@ -96,7 +91,7 @@ function GameCanvas({ isLoading=false, isConnected=true, ownOrder=1, onWidth, on
             const toAbs = findNodeByPoint(nodes, hoveredNode).absLocation
 
             ctx.beginPath()
-            ctx.setLineDash([10]);
+            ctx.setLineDash([10])
             ctx.strokeStyle = ownOrder == 1 ? redTeamColor : blueTeamColor
             ctx.lineWidth = 4
 
@@ -112,15 +107,15 @@ function GameCanvas({ isLoading=false, isConnected=true, ownOrder=1, onWidth, on
     useEffect(() => {
         if (status == GAME_STATUS.ONGOING && nodes.length > 0) {
             const handleClick = e => {
-                const x = e.pageX - e.currentTarget.offsetLeft;
-                const y = e.pageY - e.currentTarget.offsetTop;
+                const x = e.pageX - e.currentTarget.offsetLeft
+                const y = e.pageY - e.currentTarget.offsetTop
 
                 for (const node of nodes) {
                     if (withinCircle(x, y, node.absLocation.x, node.absLocation.y, nodeRadius)) {
                         if (isValidMove(node)) {
                             if(onNodeClick) onNodeClick(node)
                         } else {
-                            invalidSound.play()
+                            sounds.invalidSound.play()
                         }
                     }
                 }
@@ -140,10 +135,10 @@ function GameCanvas({ isLoading=false, isConnected=true, ownOrder=1, onWidth, on
     useEffect(() => {
         if (status == GAME_STATUS.ONGOING && nodes.length > 0) {
             const handleHover = e => {
-                const x = e.pageX - e.currentTarget.offsetLeft;
-                const y = e.pageY - e.currentTarget.offsetTop;
+                const x = e.pageX - e.currentTarget.offsetLeft
+                const y = e.pageY - e.currentTarget.offsetTop
 
-                let found = false;
+                let found = false
 
                 for (const node of nodes) {
                     if (withinCircle(x, y, node.absLocation.x, node.absLocation.y, nodeRadius)) {
@@ -179,7 +174,7 @@ function GameCanvas({ isLoading=false, isConnected=true, ownOrder=1, onWidth, on
     // Create object representations for each pitch node
     const createNodeListState = useCallback(() => {
         const nodeList = []
-        let index = 0;
+        let index = 0
 
         for (let i = 0; i < hInSquares + 1; i++) {
             for (let j = 0; j < wInSquares + 1; j++) {
@@ -259,8 +254,8 @@ function GameCanvas({ isLoading=false, isConnected=true, ownOrder=1, onWidth, on
         // Horizontal
         for (let i = 1; i < hInSquares; i++) {
             const y = gridSquareSize * i
-            const x1 = i == (hInSquares / 2) ? borderWidth + 8 : gridSquareSize + borderWidth;
-            const x2 = i == (hInSquares / 2) ? width - borderWidth - 8 : width - gridSquareSize - borderWidth;
+            const x1 = i == (hInSquares / 2) ? borderWidth + 8 : gridSquareSize + borderWidth
+            const x2 = i == (hInSquares / 2) ? width - borderWidth - 8 : width - gridSquareSize - borderWidth
 
             ctx.moveTo(x1, y)
             ctx.lineTo(x2, y)
@@ -270,8 +265,8 @@ function GameCanvas({ isLoading=false, isConnected=true, ownOrder=1, onWidth, on
         // Vertical
         for (let i = 1; i < wInSquares; i++) {
             const x = gridSquareSize * i + borderWidth / 2
-            const y1 = i == 1 || i == wInSquares - 1 ? gridSquareSize * (hInSquares / 2 - 1) + borderWidth / 2 : borderWidth;
-            const y2 = i == 1 || i == wInSquares - 1 ? gridSquareSize * (hInSquares / 2 + 1) - borderWidth / 2 : height - borderWidth;
+            const y1 = i == 1 || i == wInSquares - 1 ? gridSquareSize * (hInSquares / 2 - 1) + borderWidth / 2 : borderWidth
+            const y2 = i == 1 || i == wInSquares - 1 ? gridSquareSize * (hInSquares / 2 + 1) - borderWidth / 2 : height - borderWidth
 
             ctx.moveTo(x, y1)
             ctx.lineTo(x, y2)
@@ -322,7 +317,7 @@ function GameCanvas({ isLoading=false, isConnected=true, ownOrder=1, onWidth, on
         if (!isLoading && isConnected) {
             setContext(canvasElement.current.getContext("2d", { willReadFrequently: true }))
         }
-    }, [isLoading, isConnected, ctx, canvasElement]);
+    }, [isLoading, isConnected, ctx, canvasElement])
 
     // Redraw pitch frame on theme or size changes
     useEffect(() => {

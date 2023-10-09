@@ -1,0 +1,18 @@
+Prioritized TODOs:
+- Implement game modes on singleplayer
+- Make website responsive
+
+
+Final TODOs:
+- Add main menu title animation (slight zoom in and out)
+- Set a time limit of 5 minutes for each game
+- Decrease the incentive for the bot to go to a node if it's close to his goalpost
+- Test app on all browsers (Chrome, Firefox, Safari, Edge, Opera)
+
+
+Changes 09/10/23:
+* Moved all sound object to a single file to avoid relative pathing issues
+
+* Moved game mode selection section to its own component
+
+* Relocating /game/:id route to the /multiplayer route (in progress: game layout rendering issues need to be fixed first)

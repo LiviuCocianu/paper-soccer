@@ -1,38 +1,21 @@
-import { useMemo, useState } from "react";
-import TickIcon from "../../assets/icons/TickIcon";
-import SubmitButton from "../SubmitButton";
-import NameField from "../NameField";
-import { GAME_MODE } from "../../constants";
-import { useNavigate } from "react-router-dom";
-import { fetchRequest } from "../../utils";
-import { useDispatch } from "react-redux";
-import { setClientUsername } from "../../state/slices/gameSlice";
-import { Howl } from 'howler';
+import { useState } from "react"
+import SubmitButton from "../SubmitButton"
+import NameField from "../NameField"
+import { GAME_MODE } from "../../constants"
+import { useNavigate } from "react-router-dom"
+import { fetchRequest } from "../../utils"
+import { useDispatch } from "react-redux"
+import { setClientUsername } from "../../state/slices/gameSlice"
+import GamemodeSelector from "../GamemodeSelector"
+import sounds from "../../sounds"
 
 
 function CreateRoomForm({ errorHandler }) {
-	const [gameMode, setGamemode] = useState(GAME_MODE.CLASSIC);
-	const [username, setUsername] = useState("");
+	const [gamemode, setGamemode] = useState(GAME_MODE.CLASSIC)
+	const [username, setUsername] = useState("")
 	const [submitDisabled, setSubmitDisabled] = useState(false)
 	const dispatch = useDispatch()
 	const navigate = useNavigate()
-
-	const radioButtonSound = useMemo(() => new Howl({
-		src: ['./sounds/radio_button.mp3'],
-		volume: 0.5
-	}), [])
-
-	const buttonSound = useMemo(() => new Howl({
-		src: ['./sounds/button.mp3'],
-		volume: 0.5
-	}), [])
-
-	const selectGamemode = (e) => {
-		const gm = e.currentTarget.dataset.gamemode
-		if(gm) setGamemode(gm)
-
-		radioButtonSound.play()
-	}
 
 	const changeUsername = (e) => setUsername(e.target.value)
 
@@ -40,14 +23,14 @@ function CreateRoomForm({ errorHandler }) {
 		if(!submitDisabled) {
 			setSubmitDisabled(true)
 
-			buttonSound.play()
+			sounds.buttonSound.play()
 
-			await fetchRequest("/api/rooms/", "POST", { gameMode } )
+			await fetchRequest("/api/rooms/", "POST", { gamemode } )
 				.then(res => res.json())
 				.then(res => {
 					setSubmitDisabled(false)
 					dispatch(setClientUsername(username))
-					navigate("/game/" + res.posted.inviteCode)
+					navigate("/multiplayer/game/" + res.posted.inviteCode)
 				}).catch(err => {
 					errorHandler(err.message)
 				})
@@ -61,40 +44,14 @@ function CreateRoomForm({ errorHandler }) {
 				<h2 className="text-2xl font-bold font-strokedim dark:font-normal">Choose a game mode</h2>
 			</div>
 
-			<div className="w-full space-y-2">
-				<GamemodeButton
-					id={GAME_MODE.CLASSIC}
-					title="Classic"
-					desc="First to score a goal wins"
-					onClick={selectGamemode}
-					checked={gameMode == GAME_MODE.CLASSIC} />
-
-				<GamemodeButton
-					id={GAME_MODE.BESTOF3}
-					title="Best of 3"
-					desc="Whoever scored the most amount of goals out of 3 wins"
-					onClick={selectGamemode}
-					checked={gameMode == GAME_MODE.BESTOF3} />
-			</div>
+			<GamemodeSelector 
+				gamemode={gamemode} 
+				setGamemode={setGamemode} 
+				className="space-y-2"/>
 
 			<NameField value={username} onChange={changeUsername}/>
 
 			<SubmitButton text="Create" loadingColors="fill-white dark:fill-black" onClick={sendForm} disabled={submitDisabled} />
-		</div>
-	)
-}
-
-const GamemodeButton = ({ id, title, desc, checked, onClick }) => {
-	return (
-		<div data-gamemode={id} className="border border-black dark:border-dark pl-8 pr-2 py-2 min-h-20 cursor-pointer grid gap-x-2 items-center grid-cols-[minmax(auto,calc(100%-4rem)),4rem]" onClick={onClick}>
-			<div>
-				<h3 className="text-2xl font-bold font-strokedim dark:font-normal">{title}</h3>
-				<h4 className="text-sm font-heycomic">{desc}</h4>
-			</div>
-
-			<div className="h-full aspect-square justify-self-end">
-				{checked ? <TickIcon className="w-12 dark:fill-dark" /> : <></>}
-			</div>
 		</div>
 	)
 }

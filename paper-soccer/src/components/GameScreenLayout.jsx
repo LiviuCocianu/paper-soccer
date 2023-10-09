@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react"
 import { useSelector } from "react-redux"
-import { Howl } from 'howler';
 
 import { GAME_STATUS } from "../constants"
 
@@ -9,6 +8,7 @@ import CountdownPopup from "./popups/CountdownPopup"
 import FinishPopup from "./popups/FinishPopup"
 import SuspensionPopup from "./popups/SuspensionPopup"
 import WaitingPopup from "./popups/WaitingPopup"
+import sounds from "../sounds"
 
 function GameScreenLayout({ 
 	multiplayer=false, 
@@ -26,16 +26,6 @@ function GameScreenLayout({
 	const { countdown, won } = useSelector(state => state.game)
 
 	const [scoreboardWidth, setScoreboardWidth] = useState(0)
-
-	const startedSound = useMemo(() => new Howl({
-		src: ['./sounds/started.mp3'],
-		volume: 0.5
-	}), [])
-
-	const moveSound = useMemo(() => new Howl({
-		src: ['./sounds/move.mp3'],
-		volume: 0.5
-	}), [])
 
 	const scoreboardIndicatorLeft = useMemo(() => {
 		return order == 1 && multiplayer ? (<span className="text-xl font-heycomic">(you)</span>) : ""
@@ -78,14 +68,14 @@ function GameScreenLayout({
 
 	// Sound effects
 	useEffect(() => {
-		if(status == GAME_STATUS.ONGOING) startedSound.play()
-	}, [status, startedSound])
+		if(status == GAME_STATUS.ONGOING) sounds.startedSound.play()
+	}, [status, sounds.startedSound])
 
 	useEffect(() => {
 		if (status == GAME_STATUS.ONGOING && ((!multiplayer && activePlayer == 1) || multiplayer)) {
-			moveSound.play()
+			sounds.moveSound.play()
 		}
-	}, [status, ballPosition, activePlayer, multiplayer, moveSound])
+	}, [status, ballPosition, activePlayer, multiplayer, sounds.moveSound])
 
 	return (
 		<div className="flex flex-col items-center justify-center w-full h-full space-y-10 select-none dark:text-dark">

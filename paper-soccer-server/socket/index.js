@@ -12,10 +12,10 @@ const server = createServer(app)
 const port = process.env.SERVER_PORT || 8080
 
 server.listen(port, () => {
-    console.log("");
-    console.log("  Paper Soccer server is up and ready! Welcome! 😊");
-    console.log(`  (( listening on port ${port} ))`);
-    console.log("");
+    console.log("")
+    console.log("  Paper Soccer server is up and ready! Welcome! 😊")
+    console.log(`  (( listening on port ${port} ))`)
+    console.log("")
 })
 
 const io = new Server(server, {
@@ -29,8 +29,8 @@ export default io
 // Wipe the previous data from the database as we don't need to persist it across server restarts
 query(async (prisma) => {
     const dataCount = await prisma.room.count()
-    
-    if(dataCount > 0) {
+
+    if (dataCount > 0) {
         /*
             The database is structured like a tree, where the Room table sits at the very top,
             so deleting all the rooms will cascade to all the other remaining tables
@@ -45,11 +45,11 @@ io.on("connection", (socket) => {
     // Setup connection
     let { room: inviteCode, username = "Player" } = socket.handshake.query
 
-    if(!inviteCode || inviteCode.length != 8) {
+    if (!inviteCode || inviteCode.length != 8) {
         socket.disconnect()
         return
     }
-    
+
     username = username.slice(0, 16)
 
     query(async (prisma) => {
@@ -88,8 +88,8 @@ io.on("connection", (socket) => {
 
         socket.join(inviteCode)
 
-        console.log("");
-        console.log(`Player (NAME=${player.username}, ID=${socket.id}) joined a room (INVITE=${player.invitedTo}, MODE=${room.gamestate.mode})`);
+        console.log("")
+        console.log(`Player (NAME=${player.username}, ID=${socket.id}) joined a room (INVITE=${player.invitedTo}, MODE=${room.gamestate.mode})`)
 
         PlayerEmitter.emitRoomOrder(socket, player.roomOrder)
 
@@ -98,33 +98,35 @@ io.on("connection", (socket) => {
             where: { invitedTo: inviteCode }
         })
 
-        if(players.length > 0) {
+        if (players.length > 0) {
             players.forEach(pl => {
                 PlayerEmitter.emitNameUpdated(inviteCode, pl.roomOrder, pl.username)
             })
         }
 
         // Start the game if room got full
-        if(playerCount == 1) {
+        if (playerCount == 1) {
             const statusUpdated = await prisma.room.update({
                 where: { inviteCode },
                 data: {
-                    gamestate: { update: {
-                        data: {
-                            status: GAME_STATUS.STARTING
+                    gamestate: {
+                        update: {
+                            data: {
+                                status: GAME_STATUS.STARTING
+                            }
                         }
-                    }}
+                    }
                 }
             })
 
-            if(!statusUpdated) return
+            if (!statusUpdated) return
 
             // Emit status change to client and keep going on acknowledgement
             GamestateEmitter.emitStatusUpdated(inviteCode, GAME_STATUS.STARTING, () => {
                 let counter = 5
 
-                console.log("");
-                console.log(`Room (INVITE=${inviteCode}, MODE=${room.gamestate.mode}) is about to start a game!`);
+                console.log("")
+                console.log(`Room (INVITE=${inviteCode}, MODE=${room.gamestate.mode}) is about to start a game!`)
 
                 const countdown = setInterval(async () => {
                     const roomWithState = await prisma.room.findUnique({
@@ -160,8 +162,8 @@ io.on("connection", (socket) => {
                         // Tell the client the game started
                         GamestateEmitter.emitStatusUpdated(inviteCode, GAME_STATUS.ONGOING)
 
-                        console.log("");
-                        console.log(`Room (INVITE=${inviteCode}, MODE=${room.gamestate.mode}) started the game!`);
+                        console.log("")
+                        console.log(`Room (INVITE=${inviteCode}, MODE=${room.gamestate.mode}) started the game!`)
                     }
                 }, 1000)
             })

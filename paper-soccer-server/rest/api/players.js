@@ -33,7 +33,7 @@ router.get("/:id", (req, res) => {
 
 // Create
 router.post("/", async (req, res) => {
-    const { id, username, invitedTo } = req.body;
+    const { id, username, invitedTo } = req.body
 
     if (!id) {
         res.status(400).json(CRUD.ERROR("No ID specified in request body!"))

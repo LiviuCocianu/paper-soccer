@@ -3,11 +3,17 @@ import ThemeSwitch from "./components/ThemeSwitch"
 import { useEffect } from "react"
 import { useDispatch, useSelector } from "react-redux"
 import { disconnectFromSocket } from "./state/slices/socketSlice"
+import { init as initSounds } from "./sounds"
 
 function App() {
 	const location = useLocation()
 	const socketStatus = useSelector(state => state.socket.status)
 	const dispatch = useDispatch()
+
+	// Init sounds on UI render
+	useEffect(() => {
+		initSounds()
+	}, [])
 
 	// Disconnect socket if player leaves the game route
 	useEffect(() => {

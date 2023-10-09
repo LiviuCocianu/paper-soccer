@@ -1,5 +1,5 @@
-import { SOCKET_EVENT } from "../constants.js";
-import io from "../socket/index.js";
+import { SOCKET_EVENT } from "../constants.js"
+import io from "../socket/index.js"
 
 export const PlayerEmitter = {
     /**

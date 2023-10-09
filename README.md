@@ -37,6 +37,7 @@ The game will end if any of the following occur:
 - Redux Toolkit (state management)
 - React Router (client side routing)
 - Socket.io/client (web sockets)
+- Howler.js (audio library)
 
 ### Back end
 - Node.js (runtime environment)

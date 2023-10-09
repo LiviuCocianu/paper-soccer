@@ -1,18 +1,18 @@
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux"
 import MoonIcon from "../assets/icons/MoonIcon"
 import SunIcon from "../assets/icons/SunIcon"
-import { useCallback, useEffect } from "react";
-import { setTheme } from "../state/slices/themeSlice";
+import { useCallback, useEffect } from "react"
+import { setTheme } from "../state/slices/themeSlice"
 
 function ThemeSwitch() {
 	const appTheme = useSelector(state => state.theme)
-	const dispatch = useDispatch();
+	const dispatch = useDispatch()
 
 	// Persist theme from local storage
 	useEffect(() => {
 		const th = localStorage.getItem("theme")
 		if (th) toggleTheme(th)
-	}, []);
+	}, [])
 
 	const toggleTheme = useCallback((value) => {
 		let th = "light"

@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react"
 import CreateRoomForm from "../components/multiplayer/CreateRoomForm"
 import JoinRoomForm from "../components/multiplayer/JoinRoomForm"
-import ErrorPage from "../screens/error/ErrorPage";
+import ErrorPage from "../screens/error/ErrorPage"
 
 function MultiplayerScreen() {
-	const [createForm, toggleForm] = useState(true);
+	const [createForm, toggleForm] = useState(true)
 	const [errorMessage, setErrorMessage] = useState("")
 
 	useEffect(() => {
@@ -13,7 +13,7 @@ function MultiplayerScreen() {
 
 	const changeForm = () => {
 		toggleForm(!createForm)
-	};
+	}
 
 	if (errorMessage.length > 0) return <ErrorPage message={errorMessage} />
 

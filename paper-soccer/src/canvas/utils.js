@@ -25,5 +25,5 @@ export function hexToRgb(hex) {
 }
 
 export function withinCircle(a, b, x, y, r) {
-    return (a - x) * (a - x) + (b - y) * (b - y) < Math.pow(r, 2);
+    return (a - x) * (a - x) + (b - y) * (b - y) < Math.pow(r, 2)
 }

@@ -1,17 +1,12 @@
-import { Howl } from 'howler';
-import { useEffect, useMemo } from 'react';
-import { useSelector } from 'react-redux';
+import { useEffect, useMemo } from 'react'
+import { useSelector } from 'react-redux'
+import sounds from '../../sounds'
 
 function CountdownPopup({ count }) {
-    const countdownSound = useMemo(() => new Howl({
-        src: ['./sounds/countdown.mp3'],
-        volume: 0.5
-    }), [])
-
     const { countdown } = useSelector(state => state.game)
 
     useEffect(() => {
-        countdownSound.play()
+        sounds.countdownSound.play()
     }, [countdown])
 
     return (

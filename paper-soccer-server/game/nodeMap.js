@@ -1,4 +1,4 @@
-import { ServerPitchNode } from "../factory.js";
+import { ServerPitchNode } from "../factory.js"
 
 /**
  * @param {number} wInSquares 
@@ -7,7 +7,7 @@ import { ServerPitchNode } from "../factory.js";
  */
 function generateNodes(wInSquares, hInSquares) {
     const nodeList = []
-    let index = 0;
+    let index = 0
 
     for (let i = 0; i < hInSquares + 1; i++) {
         for (let j = 0; j < wInSquares + 1; j++) {

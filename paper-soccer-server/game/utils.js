@@ -1,7 +1,7 @@
-import { PITCH_INFO } from "../constants.js";
-import { PitchNode } from "../factory.js";
-import { query } from "../prisma/client.js";
-import nodes from "./nodeMap.js";
+import { PITCH_INFO } from "../constants.js"
+import { PitchNode } from "../factory.js"
+import { query } from "../prisma/client.js"
+import nodes from "./nodeMap.js"
 
 /**
  * Check if player can move towards this node
@@ -19,7 +19,7 @@ export async function isValidMove(inviteCode, roomOrderNumber, ballPosition, nod
             where: { inviteCode },
             include: { gamestate: { include: { nodes: { include: { relations: true } } } } }
         })
-        
+
         // 1. Check if node is within range constraints
         if (node.point < 0 || node.point > PITCH_INFO.NODE_COUNT - 1) {
             isValid = false
@@ -37,21 +37,21 @@ export async function isValidMove(inviteCode, roomOrderNumber, ballPosition, nod
             isValid = false
             return
         }
-        
+
         // 4. Check if node is in a direct relation with the ball node
         const ballNodeDb = room.gamestate.nodes.find(n => n.point == ballPosition)
         if (ballNodeDb && ballNodeDb.relations.some(rel => rel.point == node.point)) {
             isValid = false
             return
         }
-        
+
         // 5. Check if destination node (this node) can be passed through (has 6 relations at most)
         const destNode = room.gamestate.nodes.find(n => n.point == node.point)
         if (destNode && destNode.relations.length > 6) {
             isValid = false
             return
         }
-        
+
         // 6. If ball node is on border, only allow diagonal clicks
         const ballNode = findNodeByPoint(ballPosition)
         if (ballNode.placement == "border" && !isNeighbour(ballPosition, node.point, true)) {
@@ -92,7 +92,7 @@ export function findNodeByGridLocation(x, y) {
  * @param {boolean} [diagonalsOnly] If true, only check neighbours diagonally. Value is false by default
  * @returns {boolean}
  */
-export function isNeighbour(originPoint, point, diagonalsOnly=false) {
+export function isNeighbour(originPoint, point, diagonalsOnly = false) {
     const originNode = findNodeByPoint(originPoint)
     const node = findNodeByPoint(point)
     const { x: ox, y: oy } = originNode.gridLocation
@@ -136,19 +136,19 @@ function isInCorner(point) {
 export async function canMove(inviteCode, roomOrderNumber, originPoint) {
     const originNode = findNodeByPoint(originPoint)
 
-    if(!originNode) return false
+    if (!originNode) return false
 
     const { x: ox, y: oy } = originNode.gridLocation
     let canMove = false
-    
+
     main: for (let i = oy - 1; i <= oy + 1; i++) {
         for (let j = ox - 1; j <= ox + 1; j++) {
             if (i == oy && j == ox) continue
 
             const node = findNodeByGridLocation(j, i)
-            
-            if(!node) continue
-            
+
+            if (!node) continue
+
             const isValid = await isValidMove(inviteCode, roomOrderNumber, originPoint, node)
 
             if (isValid && !isInCorner(originPoint)) {
@@ -173,8 +173,8 @@ export async function canMove(inviteCode, roomOrderNumber, originPoint) {
  * - else, return undefined
  */
 export function getGoalpostAtBall(point) {
-    if(PITCH_INFO.RED_GOAL_NODES.includes(point)) return 1
-    if(PITCH_INFO.BLUE_GOAL_NODES.includes(point)) return 2
+    if (PITCH_INFO.RED_GOAL_NODES.includes(point)) return 1
+    if (PITCH_INFO.BLUE_GOAL_NODES.includes(point)) return 2
     return undefined
 }
 
@@ -202,17 +202,17 @@ async function haveRelation(prisma, stateId, first, second) {
  * 
  * @returns {Promise<boolean>}
  */
-export async function isGoalpostBlocked(stateId, red=true) {
+export async function isGoalpostBlocked(stateId, red = true) {
     let isBlocked = true
 
     await query(async (prisma) => {
         // Check phase 1
-        for(let i = 2; i < 5; i++) {
+        for (let i = 2; i < 5; i++) {
             const first = findNodeByGridLocation(red ? 2 : 10, i)
             const second = findNodeByGridLocation(red ? 1 : 11, i + 1)
 
             isBlocked = await haveRelation(prisma, stateId, first, second)
-            if(!isBlocked) return
+            if (!isBlocked) return
         }
 
         // Check phase 2
@@ -243,5 +243,5 @@ export async function isGoalpostBlocked(stateId, red=true) {
         }
     }, (e) => console.log(e))
 
-    return isBlocked;
+    return isBlocked
 }

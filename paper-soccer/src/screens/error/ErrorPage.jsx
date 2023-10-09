@@ -1,8 +1,8 @@
 import { Link, useRouteError } from "react-router-dom"
-import ThemeSwitch from "../../components/ThemeSwitch";
+import ThemeSwitch from "../../components/ThemeSwitch"
 
 function ErrorPage({ message }) {
-	const error = useRouteError();
+	const error = useRouteError()
 
 	return (
 		<div className="flex flex-col items-center justify-center w-full h-full space-y-10 select-none dark:text-dark bg-[url('/images/paper-light.png')] dark:bg-[url('/images/paper-dark.png')]">

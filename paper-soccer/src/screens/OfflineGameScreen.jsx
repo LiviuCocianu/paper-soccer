@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useDispatch, useSelector } from "react-redux"
-import { Howl } from 'howler'
 
 import GameScreenLayout from "../components/GameScreenLayout"
 import { connectNodes, resetGameState, setActivePlayer, setBallPosition, setHistory, setStatus, setWon } from "../state/slices/gameSlice"
@@ -8,6 +7,7 @@ import { GAME_MODE, GAME_STATUS } from "../constants"
 import GameServerEmulator from "../GameServerEmulator"
 import { canMove, findNodeByGridLocation, findNodeByPoint, getDistance, getGoalpostAtBall, isGoalpostBlocked, isValidMove } from "../nodeUtils"
 import { flipPlayer } from "../utils"
+import sounds from "../sounds"
 
 
 function OfflineGameScreen() {
@@ -18,16 +18,6 @@ function OfflineGameScreen() {
         "1": { name: "You", score: 0 },
         "2": { name: "Bot", score: 0 } 
     })
-
-    const winSound = useMemo(() => new Howl({
-        src: ['../sounds/win.mp3'],
-        volume: 0.5
-    }), [])
-
-    const loseSound = useMemo(() => new Howl({
-        src: ['../sounds/lose.mp3'],
-        volume: 0.5
-    }), [])
 
     // Refs
     const nodesRef = useRef()
@@ -47,7 +37,6 @@ function OfflineGameScreen() {
             dispatch(setStatus(GAME_STATUS.FINISHED))
             dispatch(setWon(flipPlayer(activePlayer)))
             setFinishMessage(`${scoreboard[activePlayer].name} got the ball stuck`)
-            console.log("test", ballPosition, activePlayer, node); // TODO debug
             return null
         }
 
@@ -121,7 +110,7 @@ function OfflineGameScreen() {
                     }
 
                     if (redundantMatch) {
-                        console.log(`${winner == 1 ? "Red" : "Blue"} team scored the most goals!`);
+                        console.log(`${winner == 1 ? "Red" : "Blue"} team scored the most goals!`)
                     }
                     break
                 }
@@ -197,7 +186,7 @@ function OfflineGameScreen() {
 
         // If more nodes with the same score are found, choose one at random
         if (highestNodePoints.length > 1) {
-            const rand = Math.floor(Math.random() * highestNodePoints.length);
+            const rand = Math.floor(Math.random() * highestNodePoints.length)
             optimalNode = findNodeByPoint(nodes, highestNodePoints[rand])
         } else {
             optimalNode = findNodeByPoint(nodes, highestNodePoints[0])
@@ -253,10 +242,10 @@ function OfflineGameScreen() {
     // Sound effects
     useEffect(() => {
         if (status == GAME_STATUS.FINISHED || status == GAME_STATUS.SUSPENDED) {
-            if (won) winSound.play()
-            else loseSound.play()
+            if (won) sounds.winSound.play()
+            else sounds.loseSound.play()
         }
-    }, [status, won, loseSound, winSound])
+    }, [status, won, sounds.loseSound, sounds.winSound])
 
     return (
         <GameScreenLayout

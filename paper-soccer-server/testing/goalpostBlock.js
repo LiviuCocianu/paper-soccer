@@ -3,7 +3,7 @@ import { query } from "../prisma/client.js"
 
 async function createRelation(prisma, stateId, first, second) {
     if (!first || !second) {
-        console.log("Create relation failed: first or second position undefined");
+        console.log("Create relation failed: first or second position undefined")
         return
     }
 
@@ -18,7 +18,7 @@ async function createRelation(prisma, stateId, first, second) {
     let firstNode
     let secondNode
 
-    if(firstCount == 0) {
+    if (firstCount == 0) {
         firstNode = await prisma.pitchnode.create({
             data: { stateId, point: first.point }
         })
@@ -28,7 +28,7 @@ async function createRelation(prisma, stateId, first, second) {
         })
     }
 
-    if(secondCount == 0) {
+    if (secondCount == 0) {
         secondNode = await prisma.pitchnode.create({
             data: { stateId, point: second.point }
         })
@@ -83,6 +83,6 @@ export async function testGoalpostBlock(stateId) {
 
     const blocked = await isGoalpostBlocked(stateId)
 
-    console.log("");
-    console.log("Red goalpost is blocked:", blocked);
+    console.log("")
+    console.log("Red goalpost is blocked:", blocked)
 }

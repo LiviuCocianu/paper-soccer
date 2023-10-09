@@ -1,21 +1,21 @@
-import { Socket } from "socket.io";
-import { GAME_MODE, GAME_STATUS, SOCKET_EVENT } from "../constants.js";
-import { canMove, findNodeByPoint, getGoalpostAtBall, isGoalpostBlocked, isValidMove } from "../game/utils.js";
-import { query } from "../prisma/client.js";
-import { GamestateEmitter, PlayerEmitter } from "./emitters.js";
-import { PitchNode } from "../factory.js";
+import { Socket } from "socket.io"
+import { GAME_MODE, GAME_STATUS, SOCKET_EVENT } from "../constants.js"
+import { canMove, getGoalpostAtBall, isGoalpostBlocked, isValidMove } from "../game/utils.js"
+import { query } from "../prisma/client.js"
+import { GamestateEmitter, PlayerEmitter } from "./emitters.js"
+import { PitchNode } from "../factory.js"
 
 /**
  * @param {Socket<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap, any>} socket 
  */
 export function onDisconnect(socket) {
-    socket.on("disconnect", () => {
+    socket.on("disconnect", (reason) => {
         query(async (prisma) => {
             const playerExists = await prisma.player.count({
                 where: { id: socket.id }
             })
 
-            if(playerExists == 0) return
+            if (playerExists == 0) return
 
             const player = await prisma.player.delete({
                 where: { id: socket.id }
@@ -28,8 +28,10 @@ export function onDisconnect(socket) {
 
             if (!player) return
 
+            console.log("")
+            console.log(`Player (NAME=${player.username}, ID=${player.id}) disconnected from room (INVITE=${player.invitedTo}, MODE=${room.gamestate.mode})`)
+            console.log("Reason:", reason);
             console.log("");
-            console.log(`Player (NAME=${player.username}, ID=${player.id}) disconnected from room (INVITE=${player.invitedTo}, MODE=${room.gamestate.mode})`);
 
             const playerCount = await prisma.player.count({
                 where: { invitedTo: player.invitedTo }
@@ -37,21 +39,25 @@ export function onDisconnect(socket) {
 
             // Cancel game on player disconnect
             // The room will remain active until all sockets disconnect from it
-            if(room.gamestate.status != GAME_STATUS.FINISHED && playerCount == 1) {
+            if (room.gamestate.status != GAME_STATUS.FINISHED && playerCount == 1) {
                 const statusUpdated = await prisma.room.update({
                     where: { inviteCode: player.invitedTo },
-                    data: { gamestate: {
-                        update: { data: {
-                            status: GAME_STATUS.SUSPENDED
-                        } }
-                    } }
+                    data: {
+                        gamestate: {
+                            update: {
+                                data: {
+                                    status: GAME_STATUS.SUSPENDED
+                                }
+                            }
+                        }
+                    }
                 })
 
-                if(!statusUpdated) return
+                if (!statusUpdated) return
 
                 GamestateEmitter.emitStatusUpdated(player.invitedTo, GAME_STATUS.SUSPENDED)
 
-                console.log(`Room (INVITE=${player.invitedTo}, MODE=${room.gamestate.mode}) was suspended: opponent left the game`);
+                console.log(`Room (INVITE=${player.invitedTo}, MODE=${room.gamestate.mode}) was suspended: opponent left the game`)
             }
             // Delete room if all sockets disconnected from it
             else if (playerCount == 0) {
@@ -61,7 +67,7 @@ export function onDisconnect(socket) {
 
                 if (!deleted) return
 
-                console.log(`Room (INVITE=${deleted.inviteCode}, MODE=${room.gamestate.mode}) was deleted: no players left, room went unused`);
+                console.log(`Room (INVITE=${deleted.inviteCode}, MODE=${room.gamestate.mode}) was deleted: no players left, room went unused`)
             }
         }, (e) => console.log(e))
     })
@@ -95,7 +101,7 @@ export function onNodeClicked(socket) {
             })
 
             // Make sure clicked node has an entry in the database
-            let clickedNode;
+            let clickedNode
 
             if (room.gamestate.nodes.every(n => n.point != node.point)) {
                 clickedNode = await prisma.pitchnode.create({
@@ -106,7 +112,7 @@ export function onNodeClicked(socket) {
                     where: { stateId: room.gamestate.id, point: node.point }
                 })
             }
-            
+
             // Count the relations for clicked node for calculations, before adding the relation
             const clickedRelationsCount = await prisma.pitchnoderelation.count({
                 where: { nodeId: clickedNode.id }
@@ -116,7 +122,7 @@ export function onNodeClicked(socket) {
             await prisma.pitchnoderelation.create({
                 data: { nodeId: clickedNode.id, point: ballNode.point, creator: roomOrderNumber }
             })
-            
+
             // Calculate game-ending variables
             const bounceable = node.placement == "border" || clickedRelationsCount > 0
             const canMoveBall = await canMove(inviteCode, roomOrderNumber, node.point)
@@ -127,7 +133,7 @@ export function onNodeClicked(socket) {
 
             // If the active player got the ball stuck or scored a goal in their own goalpost, they lose
             let winner = (!canMoveBall && !inGoalpost) || selfGoal
-                ? (roomOrderNumber == 1 ? 2 : 1) 
+                ? (roomOrderNumber == 1 ? 2 : 1)
                 : roomOrderNumber
 
             // Prepare game state columns to update at the end
@@ -143,7 +149,7 @@ export function onNodeClicked(socket) {
                 GamestateEmitter.emitStatusUpdated(inviteCode, GAME_STATUS.FINISHED)
             }
 
-            if(inGoalpost) {
+            if (inGoalpost) {
                 const playerScore = await prisma.player.findFirst({
                     where: { invitedTo: inviteCode, roomOrder: winner }
                 })
@@ -155,17 +161,17 @@ export function onNodeClicked(socket) {
 
                 PlayerEmitter.emitScoreUpdated(inviteCode, winner, playerScore.score + 1)
 
-                switch(room.gamestate.mode) {
+                switch (room.gamestate.mode) {
                     case GAME_MODE.CLASSIC:
                         updateData.status = GAME_STATUS.FINISHED
                         GamestateEmitter.emitStatusUpdated(inviteCode, GAME_STATUS.FINISHED)
 
-                        console.log("");
+                        console.log("")
 
                         if (selfGoal) {
-                            console.log(`Room (INVITE=${inviteCode}, MODE=${room.gamestate.mode}) was finished: ${roomOrderNumber == 1 ? "red" : "blue"} scored an own goal`);
+                            console.log(`Room (INVITE=${inviteCode}, MODE=${room.gamestate.mode}) was finished: ${roomOrderNumber == 1 ? "red" : "blue"} scored an own goal`)
                         } else {
-                            console.log(`Room (INVITE=${inviteCode}, MODE=${room.gamestate.mode}) was finished: ${winner == 1 ? "red" : "blue"} team won`);
+                            console.log(`Room (INVITE=${inviteCode}, MODE=${room.gamestate.mode}) was finished: ${winner == 1 ? "red" : "blue"} team won`)
                         }
                         break
                     case GAME_MODE.BESTOF3:
@@ -189,29 +195,29 @@ export function onNodeClicked(socket) {
                         const addUpTo3 = players.map(pl => pl.score).reduce((prev, curr) => prev + curr) >= 3
                         const redundantMatch = players.some(pl => pl.score == 2)
 
-                        if(addUpTo3 || redundantMatch) {
+                        if (addUpTo3 || redundantMatch) {
                             updateData.status = GAME_STATUS.FINISHED
                             GamestateEmitter.emitStatusUpdated(inviteCode, GAME_STATUS.FINISHED)
 
-                            console.log("");
+                            console.log("")
                         }
 
                         if (addUpTo3) {
-                            console.log(`Room (INVITE=${inviteCode}, MODE=${room.gamestate.mode}) was finished: ${winner == 1 ? "red" : "blue"} team won`);
+                            console.log(`Room (INVITE=${inviteCode}, MODE=${room.gamestate.mode}) was finished: ${winner == 1 ? "red" : "blue"} team won`)
                         }
 
                         if (redundantMatch) {
                             const pl = players.find(pl => pl.score == 2)
-                            console.log(`Room (INVITE=${inviteCode}, MODE=${room.gamestate.mode}) was finished: ${pl.username} won with a score of 2`);
+                            console.log(`Room (INVITE=${inviteCode}, MODE=${room.gamestate.mode}) was finished: ${pl.username} won with a score of 2`)
                         }
                         break
                 }
             } else if (!bounceable && (redBlocked || blueBlocked)) {
-                console.log("");
-                console.log(`Room (INVITE=${inviteCode}, MODE=${room.gamestate.mode}) was finished: ${redBlocked ? "red" : "blue"} goalpost got blocked`);
+                console.log("")
+                console.log(`Room (INVITE=${inviteCode}, MODE=${room.gamestate.mode}) was finished: ${redBlocked ? "red" : "blue"} goalpost got blocked`)
             } else if (!canMoveBall) {
-                console.log("");
-                console.log(`Room (INVITE=${inviteCode}, MODE=${room.gamestate.mode}) was finished: ${roomOrderNumber == 1 ? "red" : "blue"} got the ball stuck`);
+                console.log("")
+                console.log(`Room (INVITE=${inviteCode}, MODE=${room.gamestate.mode}) was finished: ${roomOrderNumber == 1 ? "red" : "blue"} got the ball stuck`)
             }
 
             GamestateEmitter.emitNodeConnected(inviteCode, {

@@ -11,7 +11,7 @@ export async function fetchRequest(endpoint, type="GET", body={}) {
 }
 
 export function decodeQueryParam(p) {
-    return decodeURIComponent(p.replace(/\+/g, " "));
+    return decodeURIComponent(p.replace(/\+/g, " "))
 }
 
 export function flipPlayer(n) {
