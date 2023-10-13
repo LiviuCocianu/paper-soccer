@@ -1,17 +1,18 @@
 import { createSlice } from "@reduxjs/toolkit"
 import { GAME_MODE, GAME_STATUS } from "../../constants"
 
+const initialBallPosition = 52
 const initialState = {
     // Client & server state
     activePlayer: 1,
     mode: GAME_MODE.CLASSIC,
     status: GAME_STATUS.WAITING,
-    ballPosition: 52,
+    ballPosition: initialBallPosition,
     // Client only state
     clientUsername: "",
     countdown: 5,
     nodes: [],
-    history: {52: []},
+    history: { [initialBallPosition]: []},
     // Singleplayer only state
     won: false, // false for bot, true for player
 }

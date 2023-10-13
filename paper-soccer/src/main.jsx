@@ -20,6 +20,8 @@ import ErrorPage from './screens/error/ErrorPage'
 import GameErrorPage from './screens/error/GameErrorPage'
 import OnlineGameScreen from './screens/OnlineGameScreen'
 import SingleplayerScreen from './screens/SingleplayerScreen'
+import { MULTIPLAYER_ROUTE } from './constants'
+import OfflineGameScreen from './screens/OfflineGameScreen'
 
 export const socketClient = new SocketClient()
 
@@ -27,9 +29,11 @@ const router = createBrowserRouter(createRoutesFromElements(
 	<Route path="/" element={<App/>} errorElement={<ErrorPage/>}>
 		<Route element={<HomeScreen />} index/>
 		<Route path="/singleplayer" element={<SingleplayerScreen />} errorElement={<ErrorPage />} />
+		<Route path="/singleplayer/game" element={<OfflineGameScreen/>} errorElement={<ErrorPage />} />
+
 		<Route path="/multiplayer" element={<MultiplayerScreen />} errorElement={<ErrorPage />} />
-		<Route path="/multiplayer/game" element={<GameErrorPage/>}/>
-		<Route path="/multiplayer/game/:id" element={<OnlineGameScreen />} errorElement={<ErrorPage/>} />
+		<Route path={MULTIPLAYER_ROUTE} element={<GameErrorPage/>}/>
+		<Route path={`${MULTIPLAYER_ROUTE}:id`} element={<OnlineGameScreen />} errorElement={<ErrorPage/>} />
 	</Route>
 ))
 

@@ -1,9 +1,11 @@
-import { Outlet, useLocation } from "react-router-dom"
-import ThemeSwitch from "./components/ThemeSwitch"
 import { useEffect } from "react"
 import { useDispatch, useSelector } from "react-redux"
 import { disconnectFromSocket } from "./state/slices/socketSlice"
 import { init as initSounds } from "./sounds"
+import { MULTIPLAYER_ROUTE } from "./constants"
+
+import { Outlet, useLocation } from "react-router-dom"
+import ThemeSwitch from "./components/ThemeSwitch"
 
 function App() {
 	const location = useLocation()
@@ -17,7 +19,7 @@ function App() {
 
 	// Disconnect socket if player leaves the game route
 	useEffect(() => {
-		if (socketStatus == "connected" && !location.pathname.startsWith("/game/")) {
+		if (socketStatus == "connected" && !location.pathname.startsWith(MULTIPLAYER_ROUTE)) {
 			dispatch(disconnectFromSocket())
 		}
 	}, [socketStatus, location])

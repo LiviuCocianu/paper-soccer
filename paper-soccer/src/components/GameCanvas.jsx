@@ -115,7 +115,7 @@ function GameCanvas({ isLoading=false, isConnected=true, ownOrder=1, onWidth, on
                         if (isValidMove(node)) {
                             if(onNodeClick) onNodeClick(node)
                         } else {
-                            sounds.invalidSound.play()
+                            sounds.invalidMoveSound.play()
                         }
                     }
                 }

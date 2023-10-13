@@ -11,7 +11,7 @@ import sounds from "../../sounds"
 
 
 function CreateRoomForm({ errorHandler }) {
-	const [gamemode, setGamemode] = useState(GAME_MODE.CLASSIC)
+	const [gameMode, setGamemode] = useState(GAME_MODE.CLASSIC)
 	const [username, setUsername] = useState("")
 	const [submitDisabled, setSubmitDisabled] = useState(false)
 	const dispatch = useDispatch()
@@ -25,7 +25,7 @@ function CreateRoomForm({ errorHandler }) {
 
 			sounds.buttonSound.play()
 
-			await fetchRequest("/api/rooms/", "POST", { gamemode } )
+			await fetchRequest("/api/rooms/", "POST", { gameMode } )
 				.then(res => res.json())
 				.then(res => {
 					setSubmitDisabled(false)
@@ -45,7 +45,7 @@ function CreateRoomForm({ errorHandler }) {
 			</div>
 
 			<GamemodeSelector 
-				gamemode={gamemode} 
+				gamemode={gameMode} 
 				setGamemode={setGamemode} 
 				className="space-y-2"/>
 

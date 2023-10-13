@@ -14,6 +14,7 @@ function OfflineGameScreen() {
     // Own state
     const [isBotBouncing, setBotBouncing] = useState(false)
     const [finishMessage, setFinishMessage] = useState("")
+    const [toastMessage, setToastMessage] = useState("")
     const [scoreboard, setScoreboard] = useState({ 
         "1": { name: "You", score: 0 },
         "2": { name: "Bot", score: 0 } 
@@ -30,7 +31,7 @@ function OfflineGameScreen() {
 
     const server = useMemo(() => new GameServerEmulator(dispatch), [dispatch])
 
-    const handleNodeClick = useCallback((node) => {
+    const handleNodeClick = useCallback(async (node) => {
         const isValid = isValidMove(nodes, node, { ballPosition, history, activePlayer })
 
         if (!isValid) {
@@ -67,21 +68,16 @@ function OfflineGameScreen() {
 
         dispatch(setWon(winner == 1))
 
-        if (!canMoveBall || (!bounceable && (redBlocked || blueBlocked))) {
-            dispatch(setStatus(GAME_STATUS.FINISHED))
-        }
+        let scored = false
 
-        if (inGoalpost) {
-            setScoreboard(prev => ({
-                ...prev,
-                [winner]: {
-                    ...prev[winner],
-                    score: prev[winner].score + 1
+        switch(mode) {
+            case GAME_MODE.CLASSIC: {
+                if (!canMoveBall || (!bounceable && (redBlocked || blueBlocked))) {
+                    dispatch(setStatus(GAME_STATUS.FINISHED))
+                    break
                 }
-            }))
 
-            switch (mode) {
-                case GAME_MODE.CLASSIC: {
+                if(inGoalpost) {
                     dispatch(setStatus(GAME_STATUS.FINISHED))
 
                     if (selfGoal) {
@@ -89,45 +85,77 @@ function OfflineGameScreen() {
                     } else {
                         setFinishMessage(`Scored a goal for the ${winner == 1 ? "red" : "blue"} team!`)
                     }
-                    break
+
+                    scored = true
+                } else if (!bounceable && (redBlocked || blueBlocked)) {
+                    scored = true
+                    setFinishMessage(`${scoreboard[winner].name} blocked the team goalpost, not allowing for any further goals`)
+                } else if (!canMoveBall) {
+                    scored = true
+                    setFinishMessage(`${scoreboard[activePlayer].name} got the ball stuck`)
                 }
-                case GAME_MODE.BESTOF3: {
-                    // Place ball back in the center
-                    dispatch(setBallPosition(52))
 
-                    // Delete nodes and their relations
-                    dispatch(setHistory({}))
-
-                    const addUpTo3 = Object.values(scoreboard).map(pl => pl.score).reduce((prev, curr) => prev + curr) >= 3
-                    const redundantMatch = Object.values(scoreboard).some(pl => pl.score == 2)
-
-                    if (addUpTo3 || redundantMatch) {
-                        dispatch(setStatus(GAME_STATUS.FINISHED))
-                    }
-
-                    if (addUpTo3) {
-                        setFinishMessage(`Scored a goal for the ${winner == 1 ? "red" : "blue"} team!`)
-                    }
-
-                    if (redundantMatch) {
-                        console.log(`${winner == 1 ? "Red" : "Blue"} team scored the most goals!`)
-                    }
-                    break
-                }
+                break
             }
-        } else if (!bounceable && (redBlocked || blueBlocked)) {
-            setFinishMessage(`${scoreboard[winner].name} blocked the team goalpost, not allowing for any further goals`)
-        } else if (!canMoveBall) {
-            setFinishMessage(`${scoreboard[activePlayer].name} got the ball stuck`)
+            case GAME_MODE.BESTOF3: {
+                if (inGoalpost) {
+                    if (selfGoal) {
+                        setToastMessage(`${scoreboard[activePlayer].name} scored an own goal..`)
+                    } else {
+                        setToastMessage(`${scoreboard[winner].name} scored a goal for the ${winner == 1 ? "red" : "blue"} team! Scorer gets their turn first!`)
+                    }
+
+                    scored = true
+                } else if (!bounceable && (redBlocked || blueBlocked)) {
+                    scored = true
+                    setToastMessage(`${scoreboard[winner].name} blocked the team goalpost, not allowing for any further goals`)
+                } else if (!canMoveBall) {
+                    scored = true
+                    setToastMessage(`${scoreboard[activePlayer].name} got the ball stuck`)
+                }
+
+                break
+            }
         }
 
         dispatch(setActivePlayer(activePl))
 
-        if (activePl == 2) {
-            setBotBouncing(bounceable)
-        }
+        if (activePl == 2) setBotBouncing(bounceable)
 
         dispatch(connectNodes({ from: ballPosition, to: node.point, creator: activePlayer }))
+
+        if (scored) {
+            const newBoard = {
+                ...scoreboard,
+                [winner]: {
+                    ...scoreboard[winner],
+                    score: scoreboard[winner].score + 1
+                }
+            }
+
+            setScoreboard(newBoard)
+
+            if (mode == GAME_MODE.BESTOF3) {
+                const addUpTo3 = Object.values(newBoard).map(pl => pl.score).reduce((prev, curr) => prev + curr) >= 3
+                const redundantMatch = Object.values(newBoard).some(pl => pl.score == 2)
+
+                if (addUpTo3 || redundantMatch) {
+                    dispatch(setStatus(GAME_STATUS.FINISHED))
+                } else {
+                    // Place ball back in the center
+                    dispatch(setBallPosition(52))
+    
+                    // Delete nodes and their relations
+                    dispatch(setHistory({}))
+                }
+
+                if (addUpTo3) {
+                    setFinishMessage(`Scored a goal for the ${winner == 1 ? "red" : "blue"} team!`)
+                } else if (redundantMatch) {
+                    setFinishMessage(`${winner == 1 ? "Red" : "Blue"} team scored the most goals!`)
+                }
+            }
+        }
 
         return bounceable
     }, [activePlayer, ballPosition, history, mode, nodes, scoreboard, dispatch])
@@ -255,6 +283,8 @@ function OfflineGameScreen() {
             scoreboard={scoreboard}
             onNodeClick={handleNodeClick}
             finishMessage={finishMessage}
+            toastText={toastMessage}
+            setToastText={setToastMessage}
         />
     )
 }

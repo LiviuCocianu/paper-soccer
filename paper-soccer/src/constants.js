@@ -1,3 +1,5 @@
+export const MULTIPLAYER_ROUTE = "/multiplayer/game/"
+
 export const GAME_STATUS = {
     WAITING: "WAITING", 
     STARTING: "STARTING", 

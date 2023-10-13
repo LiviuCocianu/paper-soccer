@@ -6,6 +6,11 @@ export default {
 		"./src/components/**/*.{js,jsx}",
 		"./src/screens/**/*.{js,jsx}"
 	],
+	safelist: [
+		{
+			pattern: /translate-x-+/,
+		}
+	],
 	theme: {
 		fontFamily: {
 			"crossedout": ["CrossedOut"],

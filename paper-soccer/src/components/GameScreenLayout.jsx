@@ -9,6 +9,7 @@ import FinishPopup from "./popups/FinishPopup"
 import SuspensionPopup from "./popups/SuspensionPopup"
 import WaitingPopup from "./popups/WaitingPopup"
 import sounds from "../sounds"
+import GameToast from "./GameToast"
 
 function GameScreenLayout({ 
 	multiplayer=false, 
@@ -18,7 +19,9 @@ function GameScreenLayout({
 	isConnected,
 	scoreboard,
 	onNodeClick,
-	finishMessage
+	finishMessage,
+	toastText="",
+	setToastText,
 }) {
 	// Client & server game state
 	const { status, activePlayer, ballPosition } = useSelector(state => state.game)
@@ -57,9 +60,9 @@ function GameScreenLayout({
 	}, [status, inviteCode])
 
 	const subtitle = useMemo(() => {
-		return !multiplayer ? (
-			activePlayer == 1 && status == GAME_STATUS.ONGOING ? "It's your turn" : <wbr/>
-		) : (
+		return !multiplayer 
+		? <wbr/> 
+		: (
 			status == GAME_STATUS.ONGOING ? (
 				activePlayer == order ? "It's your turn!" : `Wait for ${scoreboard[order == 1 ? 2 : 1].name}'s turn!`
 			) : <></>
@@ -107,6 +110,11 @@ function GameScreenLayout({
 					{subtitle}
 				</div>
 			</div>
+
+			<GameToast 
+				maxWidth={scoreboardWidth}
+				text={toastText}
+				setText={setToastText}/>
 		</div>
 	)
 }

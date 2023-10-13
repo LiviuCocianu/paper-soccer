@@ -20,6 +20,7 @@ function OnlineGameScreen() {
 	const [ queryParams ] = useSearchParams()
 	const [isLoading, toggleLoading] = useState(true)
 	const [finishMessage, setFinishMessage] = useState("")
+	const [toastMessage, setToastMessage] = useState("")
 
 	const ownOrderRef = useRef(1)
 	const modeRef = useRef(GAME_MODE.CLASSIC)
@@ -43,9 +44,10 @@ function OnlineGameScreen() {
 
 	// Disconnect on socket error
 	useEffect(() => {
-		if(socketError.current.length > 0)
+		if(socketError.current.length > 0) {
 			dispatch(disconnectFromSocket())
-	}, [socketError.current])
+		}
+	}, [socketError, dispatch])
 
 	// Change game mode ref to use in socket events without the need of state listening
 	useEffect(() => {
@@ -59,7 +61,8 @@ function OnlineGameScreen() {
 
 	// Change the scoreboard name on username change
 	useEffect(() => {
-		scoreboardRef.current[ownOrderRef.current].name = clientUsername
+		if(clientUsername.length > 0)
+			scoreboardRef.current[ownOrderRef.current].name = clientUsername
 	}, [clientUsername, ownOrderRef])
 
 	// Setup: Handle socket connect/disconnect
@@ -125,40 +128,60 @@ function OnlineGameScreen() {
 			dispatch(addHistoryMove({ point, player }))
 			dispatch(setWon(winner == ownOrderRef.current))
 
-			if(!canMove || inGoalpost) {
+			/**
+			 * In "best of 3" game mode, reset pitch if:
+			 * - Ball cannot be moved
+			 * - A goal was scored
+			 * - One of the players' goalpost got blocked
+			 */
+			if (modeRef.current == GAME_MODE.BESTOF3 && (!canMove || inGoalpost || (!bounceable && (redBlocked || blueBlocked)))) {
+				dispatch(setHistory({}))
+			}
+
+			if (!canMove || inGoalpost) {
 				// Active player = winner
 				// This player lost, so the other player will be set as the active one
 				dispatch(setActivePlayer(winner))
 
 				if (selfGoal) {
-					setFinishMessage(`${scoreboardRef.current[player].name} scored an own goal..`)
-					return
-				}
-
-				if(inGoalpost) {
-					if(modeRef.current == GAME_MODE.BESTOF3) {
-						dispatch(setHistory({}))
-						setFinishMessage(`${winner == 1 ? "Red" : "Blue"} team scored the most goals!`)
-					} else if (modeRef.current == GAME_MODE.CLASSIC) {
-						setFinishMessage(`Scored a goal for the ${inGoalpost == 1 ? "blue" : "red"} team!`)
+					if(modeRef.current == GAME_MODE.CLASSIC) {
+						setFinishMessage(`${scoreboardRef.current[player].name} scored an own goal..`)
+						return
+					} else if (modeRef.current == GAME_MODE.BESTOF3) {
+						setToastMessage(`${scoreboardRef.current[player].name} scored an own goal..`)
 					}
-					return
 				}
 
-				if(!canMove) {
-					setFinishMessage(`${scoreboardRef.current[player].name} got the ball stuck`)
+				if (inGoalpost) {
+					if (modeRef.current == GAME_MODE.CLASSIC) {
+						setFinishMessage(`Scored a goal for the ${inGoalpost == 1 ? "blue" : "red"} team!`)
+						return
+					} else if (modeRef.current == GAME_MODE.BESTOF3) {
+						setToastMessage(`${scoreboardRef.current[winner].name} scored a goal for the ${winner == 1 ? "red" : "blue"} team! Scorer gets their turn first!`)
+					}
 				}
 
-				return
+				if (!canMove) {
+					if (modeRef.current == GAME_MODE.CLASSIC) {
+						setFinishMessage(`${scoreboardRef.current[player].name} got the ball stuck`)
+						return
+					} else if (modeRef.current == GAME_MODE.BESTOF3) {
+						setToastMessage(`${scoreboardRef.current[player].name} got the ball stuck`)
+					}
+				}
 			}
 
-			if (redBlocked || blueBlocked) {
-				setFinishMessage(`${scoreboardRef.current[winner].name} blocked their goalpost, not allowing for any further goals`)
-				return
-			}
-
-			if(!bounceable) {
+			if (!bounceable) {
 				dispatch(setActivePlayer(player == 1 ? 2 : 1))
+
+				if (redBlocked || blueBlocked) {
+					if (modeRef.current == GAME_MODE.CLASSIC) {
+						setFinishMessage(`${scoreboardRef.current[winner].name} blocked their goalpost, not allowing for any further goals`)
+						return
+					} else if (modeRef.current == GAME_MODE.BESTOF3) {
+						setToastMessage(`${scoreboardRef.current[winner].name} blocked their goalpost, not allowing for any further goals`)
+					}
+				}
 			}
 		}
 
@@ -248,7 +271,7 @@ function OnlineGameScreen() {
 		}
 	}, [status, won, sounds.loseSound, sounds.winSound])
 
-	//if (socketError.current.length > 0) return <ErrorPage message={socketError.current}/>
+	if (socketError.current.length > 0) return <ErrorPage message={socketError.current}/>
 
 	if (isLoading) return <LoadingScreen />
 
@@ -262,6 +285,8 @@ function OnlineGameScreen() {
 			scoreboard={scoreboardRef.current}
 			onNodeClick={handleNodeClick}
 			finishMessage={finishMessage}
+			toastText={toastMessage}
+			setToastText={setToastMessage}
 		/>
 	)
 }

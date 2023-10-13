@@ -144,12 +144,8 @@ export function onNodeClicked(socket) {
                 winner = redBlocked ? 1 : (blueBlocked ? 2 : winner)
             }
 
-            if (!canMoveBall || (!bounceable && (redBlocked || blueBlocked))) {
-                updateData.status = GAME_STATUS.FINISHED
-                GamestateEmitter.emitStatusUpdated(inviteCode, GAME_STATUS.FINISHED)
-            }
-
-            if (inGoalpost) {
+            // Increase score if scored a goal
+            if (inGoalpost || (room.gamestate.mode == GAME_MODE.BESTOF3 && (!canMoveBall || (!bounceable && (redBlocked || blueBlocked))))) {
                 const playerScore = await prisma.player.findFirst({
                     where: { invitedTo: inviteCode, roomOrder: winner }
                 })
@@ -160,24 +156,35 @@ export function onNodeClicked(socket) {
                 })
 
                 PlayerEmitter.emitScoreUpdated(inviteCode, winner, playerScore.score + 1)
+            }
 
-                switch (room.gamestate.mode) {
-                    case GAME_MODE.CLASSIC:
+            switch(room.gamestate.mode) {
+                case GAME_MODE.CLASSIC: {
+                    if (inGoalpost || !canMoveBall || (!bounceable && (redBlocked || blueBlocked))) {
                         updateData.status = GAME_STATUS.FINISHED
                         GamestateEmitter.emitStatusUpdated(inviteCode, GAME_STATUS.FINISHED)
-
                         console.log("")
+                    }
 
-                        if (selfGoal) {
-                            console.log(`Room (INVITE=${inviteCode}, MODE=${room.gamestate.mode}) was finished: ${roomOrderNumber == 1 ? "red" : "blue"} scored an own goal`)
-                        } else {
-                            console.log(`Room (INVITE=${inviteCode}, MODE=${room.gamestate.mode}) was finished: ${winner == 1 ? "red" : "blue"} team won`)
-                        }
-                        break
-                    case GAME_MODE.BESTOF3:
+                    if (inGoalpost) {
+                        if (selfGoal) console.log(`Room (INVITE=${inviteCode}, MODE=${room.gamestate.mode}) was finished: ${roomOrderNumber == 1 ? "red" : "blue"} scored an own goal`)
+                        else console.log(`Room (INVITE=${inviteCode}, MODE=${room.gamestate.mode}) was finished: ${winner == 1 ? "red" : "blue"} team won`)
+                    } else if (!bounceable && (redBlocked || blueBlocked)) {
+                        console.log(`Room (INVITE=${inviteCode}, MODE=${room.gamestate.mode}) was finished: ${redBlocked ? "red" : "blue"} goalpost got blocked`)
+                    } else if (!canMoveBall) {
+                        console.log(`Room (INVITE=${inviteCode}, MODE=${room.gamestate.mode}) was finished: ${roomOrderNumber == 1 ? "red" : "blue"} got the ball stuck`)
+                    }
+                    
+                    break
+                }
+                case GAME_MODE.BESTOF3: {
+                    if (inGoalpost || !canMoveBall || (!bounceable && (redBlocked || blueBlocked))) {
                         const players = await prisma.player.findMany({
                             where: { invitedTo: inviteCode }
                         })
+    
+                        // Give turn to player at advantage
+                        updateData.activePlayer = winner
 
                         // Place ball back in the center
                         updateData.ballPosition = 52
@@ -186,38 +193,34 @@ export function onNodeClicked(socket) {
                         await prisma.pitchnode.deleteMany({
                             where: { stateId: room.gamestate.id }
                         })
-
+    
                         // Recreate node for the ball
                         await prisma.pitchnode.create({
                             data: { stateId: room.gamestate.id, point: 52 }
                         })
-
+    
                         const addUpTo3 = players.map(pl => pl.score).reduce((prev, curr) => prev + curr) >= 3
                         const redundantMatch = players.some(pl => pl.score == 2)
-
+    
                         if (addUpTo3 || redundantMatch) {
                             updateData.status = GAME_STATUS.FINISHED
                             GamestateEmitter.emitStatusUpdated(inviteCode, GAME_STATUS.FINISHED)
-
+    
                             console.log("")
                         }
-
+    
                         if (addUpTo3) {
                             console.log(`Room (INVITE=${inviteCode}, MODE=${room.gamestate.mode}) was finished: ${winner == 1 ? "red" : "blue"} team won`)
                         }
-
+    
                         if (redundantMatch) {
                             const pl = players.find(pl => pl.score == 2)
                             console.log(`Room (INVITE=${inviteCode}, MODE=${room.gamestate.mode}) was finished: ${pl.username} won with a score of 2`)
                         }
-                        break
+                    }
+
+                    break
                 }
-            } else if (!bounceable && (redBlocked || blueBlocked)) {
-                console.log("")
-                console.log(`Room (INVITE=${inviteCode}, MODE=${room.gamestate.mode}) was finished: ${redBlocked ? "red" : "blue"} goalpost got blocked`)
-            } else if (!canMoveBall) {
-                console.log("")
-                console.log(`Room (INVITE=${inviteCode}, MODE=${room.gamestate.mode}) was finished: ${roomOrderNumber == 1 ? "red" : "blue"} got the ball stuck`)
             }
 
             GamestateEmitter.emitNodeConnected(inviteCode, {

@@ -2,7 +2,7 @@ GET http://localhost:3000/api/gameStates/
 
 ###
 
-GET http://localhost:3000/api/gameStates/65iqdaDM
+GET http://localhost:3000/api/gameStates/9ahPNVRE
 
 ###
 

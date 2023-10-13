@@ -13,19 +13,19 @@ const sounds = {
 
 export function init() {
     const paths = {
-        buttonSound: "./sounds/button.mp3",
-        radioButtonSound: "./sounds/radio_button.mp3",
-        startedSound: "./sounds/started.mp3",
-        countdownSound: "./sounds/countdown.mp3",
-        moveSound: "./sounds/move.mp3",
-        invalidMoveSound: "./sounds/invalid_move.mp3",
-        winSound: "./sounds/win.mp3",
-        loseSound: "./sounds/lose.mp3",
+        buttonSound: "button.mp3",
+        radioButtonSound: "radio_button.mp3",
+        startedSound: "started.mp3",
+        countdownSound: "countdown.mp3",
+        moveSound: "move.mp3",
+        invalidMoveSound: "invalid_move.mp3",
+        winSound: "win.mp3",
+        loseSound: "lose.mp3",
     }
 
     for (let [key, val] of Object.entries(paths)) {
         sounds[key] = new Howl({
-            src: [val],
+            src: [`sounds/${val}`],
             volume: 0.5
         })
     }
