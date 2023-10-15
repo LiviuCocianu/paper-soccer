@@ -6,6 +6,7 @@ import { fetchRequest } from "../../utils"
 import { setClientUsername } from "../../state/slices/gameSlice"
 import { useDispatch } from "react-redux"
 import { useNavigate } from "react-router-dom"
+import { MULTIPLAYER_ROUTE } from "../../constants"
 
 function JoinRoomForm({ errorHandler }) {
 	const [inviteCode, setInviteCode] = useState("")
@@ -49,7 +50,7 @@ function JoinRoomForm({ errorHandler }) {
 						setFieldError("")
 						setSubmitDisabled(false)
 						dispatch(setClientUsername(username))
-						navigate("/game/" + inviteCode)
+						navigate(MULTIPLAYER_ROUTE + inviteCode)
 					}
 				}).catch(err => {
 					errorHandler(err.message)
@@ -58,16 +59,16 @@ function JoinRoomForm({ errorHandler }) {
 	}
 
 	return (
-		<div className="flex flex-col p-10 border-2 border-black dark:border-dark px-14 rounded-2xl animate-fadingIn">
-			<h1 className="text-5xl font-crossedout">Join a room</h1>
+		<div className="flex flex-col w-full max-w-[40rem] p-10 px-8 md:border-2 md:border-black md:w-1/2 md:dark:border-dark md:px-14 rounded-2xl animate-fadingIn">
+			<h1 className="text-3xl md:text-5xl font-crossedout">Join a room</h1>
 
-			<div className="flex flex-col w-[25rem] mt-6 space-y-4">
+			<div className="flex flex-col mt-6 space-y-4">
 				<InputField onChange={changeInviteCode} placeholder="Insert your invite code" required maxLength={8} pattern="^[a-zA-Z0-9]{8}$"/>
 				<NameField onChange={changeUsername}/>
 
 				{
 					fieldError.length > 0 ? (
-						<div className="text-center text-red-900 font-heycomic dark:text-red-300 w-[25rem]">{fieldError}</div>
+						<div className="w-full text-center text-red-900 font-heycomic dark:text-red-300">{fieldError}</div>
 					) : <></>
 				}
 			</div>

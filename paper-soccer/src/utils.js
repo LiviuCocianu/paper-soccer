@@ -19,3 +19,6 @@ export function flipPlayer(n) {
 }
 
 export const snooze = (delay) => new Promise((resolve) => setTimeout(resolve, delay))
+
+export const clamp = (a, min = 0, max = 1) => Math.min(max, Math.max(min, a))
+export const invlerp = (x, y, a) => clamp((a - x) / (y - x))

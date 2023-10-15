@@ -8,12 +8,12 @@ function ErrorPage({ message }) {
 		<div className="flex flex-col items-center justify-center w-full h-full space-y-10 select-none dark:text-dark bg-[url('/images/paper-light.png')] dark:bg-[url('/images/paper-dark.png')]">
 			<ThemeSwitch/>
 
-			<div className="flex flex-col items-center justify-center space-y-2">
-				<h1 className="text-4xl text-center font-crossedout">Something went wrong</h1>
-				<h2 className="text-2xl text-center font-heycomic">{message ? message : error.data}</h2>
+			<div className="flex flex-col items-center justify-center m-4 space-y-2">
+				<h1 className="text-2xl text-center md:text-4xl font-crossedout">Something went wrong</h1>
+				<h2 className="text-xl text-center md:text-2xl font-heycomic">{message ? message : error.data}</h2>
 			</div>
 
-			<Link to="/" className="text-2xl font-strokedim"><i>- Return to main menu -</i></Link>
+			<Link to="/" className="text-xl md:text-2xl font-strokedim"><i>- Return to main menu -</i></Link>
 		</div>
 	)
 }

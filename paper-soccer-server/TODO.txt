@@ -1,5 +1,4 @@
 Prioritized TODOs:
-- Make website responsive
 
 
 Optional TODOs:
@@ -9,11 +8,11 @@ Optional TODOs:
 - Test app on all browsers (Chrome, Firefox, Safari, Edge, Opera)
 
 
-Changes 13/10/23:
-* Finished /game/:id route relocation from previous commit
+Changes XX/10/23:
+* Made the entire user interface responsive!
 
-* A settings screen will now show up in singleplayer before starting the match
+* The pitch canvas will now adapt to the window width
 
-* Added toast messages for "best of 3" game mode to both versions of the game
+* Added opacity toggle to suspension popup as well
 
-* Updated README.md with more information about "best of 3" game mode and game versions (singleplayer, multiplayer)
+* Fixed: joining a room through the menu would lead to an outdated route

@@ -31,13 +31,13 @@ function GamemodeSelector({ className, gamemode, setGamemode }) {
 
 const GamemodeButton = ({ id, title, desc, checked, onClick }) => {
 	return (
-		<div data-gamemode={id} className="border border-black dark:border-dark pl-8 pr-2 py-2 min-h-20 cursor-pointer grid gap-x-2 items-center grid-cols-[minmax(auto,calc(100%-4rem)),4rem]" onClick={onClick}>
+		<div data-gamemode={id} className="border border-black dark:border-dark pl-4 md:pl-8 pr-2 py-2 min-h-[1rem] md:min-h-[3rem] cursor-pointer grid gap-x-2 items-center grid-cols-[minmax(auto,calc(100%-4rem)),4rem]" onClick={onClick}>
 			<div>
-				<h3 className="text-2xl font-bold font-strokedim dark:font-normal">{title}</h3>
-				<h4 className="text-sm font-heycomic">{desc}</h4>
+				<h3 className="text-xl font-bold md:text-2xl font-strokedim dark:font-normal">{title}</h3>
+				<h4 className="text-xs md:text-sm font-heycomic">{desc}</h4>
 			</div>
 
-			<div className="h-full aspect-square justify-self-end">
+			<div className="flex items-center justify-end h-full aspect-square">
 				{checked ? <TickIcon className="w-12 dark:fill-dark" /> : <></>}
 			</div>
 		</div>

@@ -38,10 +38,10 @@ function CreateRoomForm({ errorHandler }) {
 	}
 
 	return (
-		<div className="flex flex-col p-10 space-y-6 border-2 border-black dark:border-dark px-14 rounded-2xl animate-fadingIn">
+		<div className="flex flex-col p-10 px-8 space-y-8 md:border-2 md:border-black md:dark:border-dark md:px-14 rounded-2xl animate-fadingIn">
 			<div>
-				<h1 className="text-5xl font-crossedout">Create a room</h1>
-				<h2 className="text-2xl font-bold font-strokedim dark:font-normal">Choose a game mode</h2>
+				<h1 className="text-3xl md:text-5xl font-crossedout">Create a room</h1>
+				<h2 className="text-xl font-bold md:text-2xl font-strokedim dark:font-normal">Choose a game mode</h2>
 			</div>
 
 			<GamemodeSelector 

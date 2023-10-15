@@ -29,12 +29,12 @@ function SingleplayerScreen() {
 
     return (
         <div className="flex flex-col items-center justify-center w-full h-full space-y-10 select-none dark:text-dark">
-            <div className="flex flex-col p-10 border-2 border-black dark:border-dark px-14 rounded-2xl animate-fadingIn">
+            <div className="flex flex-col p-8 px-8 md:border-2 md:border-black md:p-10 md:dark:border-dark md:px-14 rounded-2xl animate-fadingIn">
                 <div className="flex flex-col items-center justify-center w-full h-full space-y-6 select-none dark:text-dark">
-                    <h1 className="self-start text-5xl font-crossedout">Match settings</h1>
+                    <h1 className="self-start text-3xl md:text-5xl font-crossedout">Match settings</h1>
 
                     <section className="space-y-2">
-                        <h2 className="text-2xl font-bold font-strokedim dark:font-normal">Choose a game mode</h2>
+                        <h2 className="text-xl font-bold md:text-2xl font-strokedim dark:font-normal">Choose a game mode</h2>
                         <GamemodeSelector 
                             gamemode={gamemode}
                             setGamemode={setGamemode}
@@ -42,7 +42,7 @@ function SingleplayerScreen() {
                     </section>
 
                     <section className="flex w-full space-x-4">
-                        <h2 className="text-2xl font-bold font-strokedim dark:font-normal">Should you get the first turn?</h2>
+                        <h2 className="text-xl font-bold md:text-2xl font-strokedim dark:font-normal">Should you get the first turn?</h2>
                         <YesNoSwitch width={16} isYes={isYes} setResponse={setResponse}/>
                     </section>
 

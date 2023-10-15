@@ -88,13 +88,13 @@ function GameScreenLayout({
 			<div style={{ width: scoreboardWidth }}>
 				<div className="flex justify-between w-full font-strokedim">
 					<div>
-						<h1 className="text-3xl">{scoreboard[1].name} {scoreboardIndicatorLeft}</h1>
-						<h2 className="text-xl">Score: {scoreboard[1].score}</h2>
+						<h1 className="text-2xl md:text-3xl">{scoreboard[1].name} {scoreboardIndicatorLeft}</h1>
+						<h2 className="text-lg md:text-xl">Score: {scoreboard[1].score}</h2>
 					</div>
 
 					<div className="flex flex-col items-end">
-						<h1 className="text-3xl">{scoreboardIndicatorRight} {scoreboard[2].name}</h1>
-						<h2 className="text-xl">Score: {scoreboard[2].score}</h2>
+						<h1 className="text-2xl md:text-3xl">{scoreboardIndicatorRight} {scoreboard[2].name}</h1>
+						<h2 className="text-lg md:text-xl">Score: {scoreboard[2].score}</h2>
 					</div>
 				</div>
 

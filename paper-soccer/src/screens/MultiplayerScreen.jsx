@@ -18,13 +18,13 @@ function MultiplayerScreen() {
 	if (errorMessage.length > 0) return <ErrorPage message={errorMessage} />
 
 	return (
-		<div className="flex flex-col items-center justify-center w-full h-full space-y-10 select-none dark:text-dark">
+		<div className="flex flex-col items-center justify-center w-full h-full space-y-6 select-none md:space-y-10 dark:text-dark">
 			{createForm 
 				? <CreateRoomForm errorHandler={setErrorMessage} /> 
 				: <JoinRoomForm errorHandler={setErrorMessage} />
 			}
 			
-			<div className="text-4xl font-heycomic">
+			<div className="text-2xl md:text-4xl font-heycomic">
 				...or <u className="cursor-pointer" onClick={changeForm}>{createForm ? "join a room" : "create a room"}</u>
 			</div>
 		</div>

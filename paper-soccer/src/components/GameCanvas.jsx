@@ -5,6 +5,7 @@ import { findNodeByPoint, isNeighbour } from "../nodeUtils"
 import { setNodes } from "../state/slices/gameSlice"
 import { GAME_STATUS, PITCH_INFO } from "../constants"
 import sounds from "../sounds"
+import { invlerp } from "../utils"
 
 
 const [wInSquares, hInSquares] = [12, 8]
@@ -82,27 +83,6 @@ function GameCanvas({ isLoading=false, isConnected=true, ownOrder=1, onWidth, on
         return true
     }, [nodes, activePlayer, ballPosition, ownOrder, history])
 
-    const drawPreviewLine = useCallback(() => {
-        if (nodes.length == 0 || !ctx) return
-        if (hoveredNode == ballPosition) return
-
-        if (isNeighbour(nodes, ballPosition, hoveredNode)) {
-            const ballAbs = findNodeByPoint(nodes, ballPosition).absLocation
-            const toAbs = findNodeByPoint(nodes, hoveredNode).absLocation
-
-            ctx.beginPath()
-            ctx.setLineDash([10])
-            ctx.strokeStyle = ownOrder == 1 ? redTeamColor : blueTeamColor
-            ctx.lineWidth = 4
-
-            ctx.moveTo(ballAbs.x, ballAbs.y)
-            ctx.lineTo(toAbs.x, toAbs.y)
-            ctx.stroke()
-
-            ctx.setLineDash([])
-        }
-    }, [hoveredNode, ballPosition, blueTeamColor, redTeamColor, ctx])
-
     // Register click event for nodes and update on state change
     useEffect(() => {
         if (status == GAME_STATUS.ONGOING && nodes.length > 0) {
@@ -171,6 +151,35 @@ function GameCanvas({ isLoading=false, isConnected=true, ownOrder=1, onWidth, on
         }
     }, [status, nodes, nodeRadius, activePlayer, ownOrder, ballPosition, isValidMove])
 
+    // Get window width and adjust ratio
+    useEffect(() => {
+        const windowWidth = window.visualViewport.width
+        const newRatio = Math.max(0.4, invlerp(0, 800, windowWidth))
+
+        setRatio(newRatio)
+    }, [])
+
+    const drawPreviewLine = useCallback(() => {
+        if (nodes.length == 0 || !ctx) return
+        if (hoveredNode == ballPosition) return
+
+        if (isNeighbour(nodes, ballPosition, hoveredNode)) {
+            const ballAbs = findNodeByPoint(nodes, ballPosition).absLocation
+            const toAbs = findNodeByPoint(nodes, hoveredNode).absLocation
+
+            ctx.beginPath()
+            ctx.setLineDash([10 * ratio])
+            ctx.strokeStyle = ownOrder == 1 ? redTeamColor : blueTeamColor
+            ctx.lineWidth = 4 * ratio
+
+            ctx.moveTo(ballAbs.x, ballAbs.y)
+            ctx.lineTo(toAbs.x, toAbs.y)
+            ctx.stroke()
+
+            ctx.setLineDash([])
+        }
+    }, [hoveredNode, ballPosition, blueTeamColor, redTeamColor, ctx, ratio])
+
     // Create object representations for each pitch node
     const createNodeListState = useCallback(() => {
         const nodeList = []
@@ -218,7 +227,7 @@ function GameCanvas({ isLoading=false, isConnected=true, ownOrder=1, onWidth, on
     const drawGoalpostDetails = useCallback(() => {
         ctx.beginPath()
         ctx.strokeStyle = "#ff7f7f"
-        ctx.lineWidth = 10
+        ctx.lineWidth = borderWidth * (2 * ratio)
         ctx.moveTo(borderWidth * 1.5, gridSquareSize * (hInSquares / 2 - 1) + borderWidth / 2)
         ctx.lineTo(borderWidth * 1.5, gridSquareSize * (hInSquares / 2 + 1) - borderWidth / 2)
         ctx.stroke()
@@ -228,7 +237,7 @@ function GameCanvas({ isLoading=false, isConnected=true, ownOrder=1, onWidth, on
         ctx.moveTo(width - borderWidth * 1.5, gridSquareSize * (hInSquares / 2 - 1) + borderWidth / 2)
         ctx.lineTo(width - borderWidth * 1.5, gridSquareSize * (hInSquares / 2 + 1) - borderWidth / 2)
         ctx.stroke()
-    }, [borderWidth, ctx, gridSquareSize, width])
+    }, [borderWidth, ctx, gridSquareSize, width, ratio])
 
     const drawPitchBorder = useCallback(() => {
         ctx.beginPath()
@@ -254,8 +263,9 @@ function GameCanvas({ isLoading=false, isConnected=true, ownOrder=1, onWidth, on
         // Horizontal
         for (let i = 1; i < hInSquares; i++) {
             const y = gridSquareSize * i
-            const x1 = i == (hInSquares / 2) ? borderWidth + 8 : gridSquareSize + borderWidth
-            const x2 = i == (hInSquares / 2) ? width - borderWidth - 8 : width - gridSquareSize - borderWidth
+            const middleOffset = 8 * ratio
+            const x1 = i == (hInSquares / 2) ? borderWidth + middleOffset : gridSquareSize + borderWidth
+            const x2 = i == (hInSquares / 2) ? width - borderWidth - middleOffset : width - gridSquareSize - borderWidth
 
             ctx.moveTo(x1, y)
             ctx.lineTo(x2, y)
@@ -274,7 +284,7 @@ function GameCanvas({ isLoading=false, isConnected=true, ownOrder=1, onWidth, on
         }
 
         ctx.stroke()
-    }, [ctx, width, height, borderWidth, gridSquareSize, gridStrokeColor])
+    }, [ctx, width, height, borderWidth, gridSquareSize, gridStrokeColor, ratio])
 
     const drawGoalpostOpenings = useCallback(() => {
         const rgbBorderColor = hexToRgb(borderStrokeColor)
@@ -291,7 +301,7 @@ function GameCanvas({ isLoading=false, isConnected=true, ownOrder=1, onWidth, on
 
     // Draw player moves (history) from Redux state
     const drawHistory = useCallback((ballLocation) => {
-        ctx.lineWidth = 3
+        ctx.lineWidth = 3 * ratio
 
         for (const [point, relations] of Object.entries(history)) {
             const pointNode = findNodeByPoint(nodes, parseInt(point))
@@ -310,7 +320,7 @@ function GameCanvas({ isLoading=false, isConnected=true, ownOrder=1, onWidth, on
         }
 
         drawBall(ballLocation)
-    }, [ctx, history, nodes, redTeamColor, blueTeamColor, drawBall])
+    }, [ctx, history, nodes, redTeamColor, blueTeamColor, drawBall, ratio])
 
     // Fetch canvas context when page is successfully loaded
     useEffect(() => {
