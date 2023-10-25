@@ -9,10 +9,3 @@ Optional TODOs:
 
 
 Changes XX/10/23:
-* Made the entire user interface responsive!
-
-* The pitch canvas will now adapt to the window width
-
-* Added opacity toggle to suspension popup as well
-
-* Fixed: joining a room through the menu would lead to an outdated route
