@@ -21,7 +21,7 @@ function FinishPopup({ winner="Player", reason = "" }) {
                     </div>
 
                     <h2 className="text-xl font-bold text-center md:text-2xl font-strokedim dark:font-normal">{reason}</h2>
-                    <Link to="/" className="absolute font-bold bottom-4 md:bottom-10 font-strokedim dark:font-normal"><i>- Return to main menu -</i></Link>
+                    <Link to={`${import.meta.env.ROOT_ROUTE}/`} className="absolute font-bold bottom-4 md:bottom-10 font-strokedim dark:font-normal"><i>- Return to main menu -</i></Link>
                 </div>
             </div>
         </div>

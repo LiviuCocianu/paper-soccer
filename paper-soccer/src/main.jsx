@@ -26,12 +26,12 @@ import OfflineGameScreen from './screens/OfflineGameScreen'
 export const socketClient = new SocketClient()
 
 const router = createBrowserRouter(createRoutesFromElements(
-	<Route path={import.meta.env.ROOT_ROUTE} element={<App/>} errorElement={<ErrorPage/>}>
+	<Route path={`${import.meta.env.ROOT_ROUTE}/`} element={<App/>} errorElement={<ErrorPage/>}>
 		<Route element={<HomeScreen />} index/>
-		<Route path={import.meta.env.ROOT_ROUTE + "/singleplayer"} element={<SingleplayerScreen />} errorElement={<ErrorPage />} />
-		<Route path={import.meta.env.ROOT_ROUTE + "/singleplayer/game"} element={<OfflineGameScreen/>} errorElement={<ErrorPage />} />
+		<Route path={`${import.meta.env.ROOT_ROUTE}/singleplayer`} element={<SingleplayerScreen />} errorElement={<ErrorPage />} />
+		<Route path={`${import.meta.env.ROOT_ROUTE}/singleplayer/game`} element={<OfflineGameScreen/>} errorElement={<ErrorPage />} />
 
-		<Route path={import.meta.env.ROOT_ROUTE + "/multiplayer"} element={<MultiplayerScreen />} errorElement={<ErrorPage />} />
+		<Route path={`${import.meta.env.ROOT_ROUTE}/multiplayer`} element={<MultiplayerScreen />} errorElement={<ErrorPage />} />
 		<Route path={import.meta.env.ROOT_ROUTE + MULTIPLAYER_ROUTE} element={<GameErrorPage/>}/>
 		<Route path={`${import.meta.env.ROOT_ROUTE + MULTIPLAYER_ROUTE}:id`} element={<OnlineGameScreen />} errorElement={<ErrorPage/>} />
 	</Route>

@@ -13,7 +13,7 @@ function ErrorPage({ message }) {
 				<h2 className="text-xl text-center md:text-2xl font-heycomic">{message ? message : error.data}</h2>
 			</div>
 
-			<Link to="/" className="text-xl md:text-2xl font-strokedim"><i>- Return to main menu -</i></Link>
+			<Link to={`${import.meta.env.ROOT_ROUTE}/`} className="text-xl md:text-2xl font-strokedim"><i>- Return to main menu -</i></Link>
 		</div>
 	)
 }
