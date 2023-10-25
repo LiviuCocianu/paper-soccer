@@ -26,8 +26,8 @@ import OfflineGameScreen from './screens/OfflineGameScreen'
 export const socketClient = new SocketClient()
 
 const router = createBrowserRouter(createRoutesFromElements(
-	<Route path={`${import.meta.env.VITE_ROOT_ROUTE}/`} element={<App/>} errorElement={<ErrorPage/>}>
-		<Route element={<HomeScreen />} index/>
+	<Route path={`/`} element={<App/>} errorElement={<ErrorPage/>}>
+		<Route path={`${import.meta.env.VITE_ROOT_ROUTE}/`} element={<HomeScreen />} index/>
 		<Route path={`${import.meta.env.VITE_ROOT_ROUTE}/singleplayer`} element={<SingleplayerScreen />} errorElement={<ErrorPage />} />
 		<Route path={`${import.meta.env.VITE_ROOT_ROUTE}/singleplayer/game`} element={<OfflineGameScreen/>} errorElement={<ErrorPage />} />
 
