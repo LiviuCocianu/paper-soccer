@@ -19,6 +19,9 @@ jobs:
         with:
           node-version: 16
 
+      - name: Change to the client directory
+        run: cd ./paper-soccer && echo "$PWD"
+
       - name: Install dependencies
         uses: bahmutov/npm-install@v1
 
