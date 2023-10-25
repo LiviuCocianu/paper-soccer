@@ -19,9 +19,6 @@ jobs:
         with:
           node-version: 16
 
-      - name: Change to the client directory
-        run: cd ./paper-soccer
-
       - name: Install dependencies
         uses: bahmutov/npm-install@v1
 
@@ -41,9 +38,6 @@ jobs:
     if: github.ref == 'refs/heads/main'
 
     steps:
-      - name: Change to the client directory
-        run: cd ./paper-soccer
-
       - name: Download artifact
         uses: actions/download-artifact@v2
         with:
