@@ -26,6 +26,10 @@ jobs:
 
       - name: Build project
         run: cd ./paper-soccer && npm run build
+        env:
+          VITE_SERVER_ADDRESS: ${{ secrets.VITE_SERVER_ADDRESS }}
+          VITE_SERVER_PORT: ${{ secrets.VITE_SERVER_PORT }}
+          VITE_ROOT_ROUTE: ${{ secrets.VITE_ROOT_ROUTE }}
 
       - name: Upload production-ready build files
         uses: actions/upload-artifact@v2
