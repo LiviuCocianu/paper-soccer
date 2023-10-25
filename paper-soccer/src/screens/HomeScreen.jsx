@@ -17,15 +17,15 @@ function HomeScreen() {
 				<h1 className="text-4xl text-center font-crossedout md:text-7xl">Paper Soccer</h1>
 
 				<div className="flex flex-col items-center justify-around space-y-4 text-2xl font-bold md:space-y-0 md:flex-row font-strokedim dark:font-normal">
-					<HomeButton text="Play with bot" path={import.meta.env.ROOT_ROUTE + "/singleplayer"} onClick={handleButtonClick} />
-					<HomeButton text="Play with someone" path={import.meta.env.ROOT_ROUTE + "/multiplayer"} onClick={handleButtonClick} />
+					<HomeButton text="Play with bot" path={`${import.meta.env.VITE_ROOT_ROUTE}/singleplayer`} onClick={handleButtonClick} />
+					<HomeButton text="Play with someone" path={`${import.meta.env.VITE_ROOT_ROUTE}/multiplayer`} onClick={handleButtonClick} />
 				</div>
 			</div>
 		</div>
 	)
 }
 
-const HomeButton = ({ text, path=`${import.meta.env.ROOT_ROUTE}/`, onClick }) => {
+const HomeButton = ({ text, path=`${import.meta.env.VITE_ROOT_ROUTE}/`, onClick }) => {
 	return <Link to={path} className="w-full h-full p-2 px-6 text-center border-2 border-black rounded-lg md:w-auto dark:border-dark hover:border-dashed" onClick={onClick}>{text}</Link>
 }
 

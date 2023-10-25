@@ -18,7 +18,7 @@ function SuspensionPopup({ reason="" }) {
 					<h1 className="text-3xl md:text-5xl font-crossedout">Game canceled</h1>
 					<h2 className="text-xl md:text-2xl font-strokedim">{reason}</h2>
 					
-					<Link to={`${import.meta.env.ROOT_ROUTE}/`} className="absolute font-bold bottom-4 md:bottom-10 font-strokedim dark:font-normal"><i>- Return to main menu -</i></Link>
+					<Link to={`${import.meta.env.VITE_ROOT_ROUTE}/`} className="absolute font-bold bottom-4 md:bottom-10 font-strokedim dark:font-normal"><i>- Return to main menu -</i></Link>
 				</div>
 			</div>
 		</div>

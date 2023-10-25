@@ -8,7 +8,7 @@ function GameErrorPage() {
 				<h2 className="text-xl text-center md:text-2xl font-strokedim">There is nothing to see here, move along please!</h2>
 			</div>
 			
-			<Link to={`${import.meta.env.ROOT_ROUTE}/`} className="text-xl md:text-2xl font-strokedim"><i>- Return to main menu -</i></Link>
+			<Link to={`${import.meta.env.VITE_ROOT_ROUTE}/`} className="text-xl md:text-2xl font-strokedim"><i>- Return to main menu -</i></Link>
 		</div>
 	)
 }
