@@ -25,6 +25,11 @@ function CreateRoomForm({ errorHandler }) {
 
 			sounds.buttonSound.play()
 
+			if (import.meta.env.VITE_GITHUB_PAGES) {
+				errorHandler("This is a demo of the application, therefore multiplayer features have been disabled!")
+				return
+			}
+
 			await fetchRequest("/api/rooms/", "POST", { gameMode } )
 				.then(res => res.json())
 				.then(res => {

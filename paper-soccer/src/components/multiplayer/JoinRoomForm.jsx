@@ -36,6 +36,11 @@ function JoinRoomForm({ errorHandler }) {
 
 			setSubmitDisabled(true)
 
+			if (import.meta.env.VITE_GITHUB_PAGES) {
+				errorHandler("This is a demo of the application, therefore multiplayer features have been disabled!")
+				return
+			}
+
 			await fetchRequest("/api/rooms/" + inviteCode, "GET")
 				.then(res => {
 					if(res.status == 204) {

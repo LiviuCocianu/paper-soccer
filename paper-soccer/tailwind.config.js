@@ -9,6 +9,9 @@ export default {
 	safelist: [
 		{
 			pattern: /translate-x-+/,
+		},
+		{
+			pattern: /bottom-+/,
 		}
 	],
 	theme: {

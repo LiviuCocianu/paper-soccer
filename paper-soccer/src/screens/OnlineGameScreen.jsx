@@ -273,6 +273,8 @@ function OnlineGameScreen() {
 
 	if (socketError.current.length > 0) return <ErrorPage message={socketError.current}/>
 
+	if(import.meta.env.VITE_GITHUB_PAGES) return <ErrorPage message="This is a demo of the application, therefore multiplayer features have been disabled!"/>
+
 	if (isLoading) return <LoadingScreen />
 
 	return (

@@ -30,6 +30,12 @@ function App() {
 
 			{/* Anything else in the application */}
 			<Outlet/>
+
+			{
+				import.meta.env.VITE_GITHUB_PAGES ? (
+					<h2 className="absolute bottom-0 right-0 m-4 select-none text-md md:text-xl font-heycomic dark:text-dark">Github Pages DEMO version</h2>
+				) : <></>
+			}
 		</div>
 	)
 }
