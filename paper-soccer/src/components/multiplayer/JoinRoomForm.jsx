@@ -50,7 +50,7 @@ function JoinRoomForm({ errorHandler }) {
 						setFieldError("")
 						setSubmitDisabled(false)
 						dispatch(setClientUsername(username))
-						navigate(MULTIPLAYER_ROUTE + inviteCode)
+						navigate(import.meta.env.VITE_ROOT_ROUTE + MULTIPLAYER_ROUTE + inviteCode)
 					}
 				}).catch(err => {
 					errorHandler(err.message)

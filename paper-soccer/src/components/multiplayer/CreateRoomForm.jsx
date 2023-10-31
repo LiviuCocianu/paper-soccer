@@ -30,7 +30,7 @@ function CreateRoomForm({ errorHandler }) {
 				.then(res => {
 					setSubmitDisabled(false)
 					dispatch(setClientUsername(username))
-					navigate("/multiplayer/game/" + res.posted.inviteCode)
+					navigate(`${import.meta.env.VITE_ROOT_ROUTE}/multiplayer/game/${res.posted.inviteCode}`)
 				}).catch(err => {
 					errorHandler(err.message)
 				})

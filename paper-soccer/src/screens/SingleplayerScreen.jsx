@@ -20,7 +20,7 @@ function SingleplayerScreen() {
         dispatch(setGameMode(gamemode))
         dispatch(setActivePlayer(isYes ? 1 : 2))
 
-        navigate("/singleplayer/game")
+        navigate(`${import.meta.env.VITE_ROOT_ROUTE}/singleplayer/game`)
     }
 
     useEffect(() => {
