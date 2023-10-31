@@ -24,9 +24,6 @@ jobs:
         with:
           working-directory: paper-soccer
 
-      - name: Confirm the root route existence
-        run: echo "The root route is ${{ secrets.VITE_ROOT_ROUTE }}"
-
       - name: Build project
         working-directory: ./paper-soccer
         run: npm run build
@@ -34,6 +31,7 @@ jobs:
           VITE_SERVER_ADDRESS: ${{ secrets.VITE_SERVER_ADDRESS }}
           VITE_SERVER_PORT: ${{ secrets.VITE_SERVER_PORT }}
           VITE_ROOT_ROUTE: ${{ secrets.VITE_ROOT_ROUTE }}
+          VITE_GITHUB_PAGES: ${{ secrets.VITE_GITHUB_PAGES }}
 
       - name: Upload production-ready build files
         uses: actions/upload-artifact@v2
